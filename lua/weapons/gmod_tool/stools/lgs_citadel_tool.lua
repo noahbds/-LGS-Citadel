@@ -17,7 +17,7 @@ if CLIENT then
 end
 
 function TOOL.BuildCPanel(panel)
-    panel:AddControl("Header", { Text = "Mission Settings", Description = "Set the name of the mission" })
+    panel:AddControl("Header", { Text = "Mission Settings", Description = "Set the name and description of the mission" })
 
     panel:AddControl("TextBox", {
         Label = "Mission Name",
@@ -25,31 +25,46 @@ function TOOL.BuildCPanel(panel)
         MaxLenth = "50"
     })
 
-    panel:AddControl("Header", { Text = "NPC Settings", Description = "Set the class and model of the NPC" })
-
     panel:AddControl("TextBox", {
-        Label = "NPC Class",
-        Text = "my_tool_npc_class",
-        MaxLenth = "50"
+        Label = "Mission Description",
+        Text = "my_tool_mission_description",
+        MaxLenth = "100"
     })
 
-    panel:AddControl("TextBox", {
-        Label = "NPC Model",
-        Text = "my_tool_npc_model",
-        MaxLenth = "50"
+    panel:AddControl("Button", {
+        Text = "Create Mission",
+        Command = "my_tool_create_mission"
     })
 
-    panel:AddControl("TextBox", {
-        Label = "NPC Weapon",
-        Text = "my_tool_npc_weapon",
-        MaxLenth = "50"
-    })
+    -- Add a condition to check if the mission name is set before showing NPC settings
+    local missionName = GetConVarString("my_tool_mission_name")
+    if missionName ~= "" then
+        panel:AddControl("Header", { Text = "NPC Settings", Description = "Set the class and model of the NPC" })
 
-    panel:AddControl("TextBox", {
-        Label = "NPC Health",
-        Text = "my_tool_npc_health",
-        MaxLenth = "50"
-    })
+        panel:AddControl("TextBox", {
+            Label = "NPC Class",
+            Text = "my_tool_npc_class",
+            MaxLenth = "50"
+        })
+
+        panel:AddControl("TextBox", {
+            Label = "NPC Model",
+            Text = "my_tool_npc_model",
+            MaxLenth = "50"
+        })
+
+        panel:AddControl("TextBox", {
+            Label = "NPC Weapon",
+            Text = "my_tool_npc_weapon",
+            MaxLenth = "50"
+        })
+
+        panel:AddControl("TextBox", {
+            Label = "NPC Health",
+            Text = "my_tool_npc_health",
+            MaxLenth = "50"
+        })
+    end
 end
 
 function TOOL:DrawToolScreen(width, height)

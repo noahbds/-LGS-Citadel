@@ -87,6 +87,7 @@ function SWEP:PrimaryAttack()
     local tr = ply:GetEyeTrace()
 
     local missionName = GetConVarString("my_tool_mission_name")
+    local missionDescription = GetConVarString("my_tool_mission_description") -- Get the mission description
     local npcClass = GetConVarString("my_tool_npc_class")
     local npcModel = GetConVarString("my_tool_npc_model")
     local npcWeapon = GetConVarString("my_tool_npc_weapon")
@@ -107,7 +108,8 @@ function SWEP:PrimaryAttack()
     end
 
     if (tr.Hit) then
-        local data = npcClass ..
+        local data = missionDescription .. "\n" .. -- Include the mission description in the data
+            npcClass ..
             " " ..
             npcModel ..
             " " ..

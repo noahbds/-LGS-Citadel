@@ -29,19 +29,24 @@ concommand.Add("open_mission_selector", function()
         listview:AddLine(missionName)                                                      -- Add the mission to the list view
     end
 
+    local startButton = vgui.Create("DButton", frame)                                          -- Create a new button
+    startButton:SetSize(480, 30)                                                               -- Set the size of the button
+    startButton:SetPos(10, 260)                                                                -- Set the position of the button
+    startButton:SetText("Start Mission")                                                       -- Set the text of the button
+    startButton:SetEnabled(false)                                                              -- Disable the button by default
+
     listview.OnRowSelected = function(lst, index, pnl)                                         -- Set what happens when a row is selected
         local selectedMission = pnl:GetColumnText(1)                                           -- Get the selected mission name from the row
         local missionFile = file.Read("missions/" .. selectedMission .. "_npcpos.txt", "DATA") -- Read the mission file
         local missionDescription = missionFile:match("^(.-)\n")                                -- Get the mission description from the file
         descriptionLabel:SetText("Description: " .. missionDescription)                        -- Set the text of the label to the mission description
+        startButton:SetEnabled(true)                                                           -- Enable the button when a mission is selected
     end
 
-    local startButton = vgui.Create("DButton", frame)                                         -- Create a new button
-    startButton:SetSize(480, 30)                                                              -- Set the size of the button
-    startButton:SetPos(10, 260)                                                               -- Set the position of the button
-    startButton:SetText("Start Mission")                                                      -- Set the text of the button
-    startButton.DoClick = function()                                                          -- Set what happens when the button is clicked
-        local selectedMission = listview:GetLine(listview:GetSelectedLine()):GetColumnText(1) -- Get the selected mission name from the list view
-        RunConsoleCommand("start_mission", selectedMission)                                   -- Start the selected mission
+    startButton.DoClick = function()                                                              -- Set what happens when the button is clicked
+        if listview:GetSelectedLine() then                                                        -- Check if a mission is selected
+            local selectedMission = listview:GetLine(listview:GetSelectedLine()):GetColumnText(1) -- Get the selected mission name from the list view
+            RunConsoleCommand("start_mission", selectedMission)                                   -- Start the selected mission
+        end
     end
 end)

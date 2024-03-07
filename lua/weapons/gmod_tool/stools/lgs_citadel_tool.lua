@@ -1,14 +1,14 @@
--- tool_gun.lua
+-- lgs_citadel_tool.lua
 
-TOOL.Category   = "addon_categry"
-TOOL.Name       = "addon_name"
+TOOL.Category   = "[LGS] Citadel"
+TOOL.Name       = "Ciatdel Tool"
 TOOL.Command    = nil
 TOOL.ConfigName = ""
 
 if CLIENT then
-    language.Add("tool.addon_name.name", "addon_name")
-    language.Add("tool.addon_name.desc", "addon_desc")
-    language.Add("tool.addon_name.0", "By Noahbds")
+    language.Add("tool.lgs_citadel_tool.name", "Citadel Tool")
+    language.Add("tool.lgs_citadel_tool.desc", "LGS Citadel Tool to place NPCs and create missions")
+    language.Add("tool.lgs_citadel_tool.0", "By Noahbds")
 
     local fontParams = { font = "Arial", size = 30, weight = 1000, antialias = true, additive = false }
 

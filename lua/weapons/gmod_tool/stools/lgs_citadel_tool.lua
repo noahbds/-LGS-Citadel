@@ -1,34 +1,44 @@
 -- lgs_citadel_tool.lua
 
+CreateConVar("my_tool_mission_name", "", FCVAR_REPLICATED, "The name of the mission")
+CreateConVar("my_tool_mission_description", "", FCVAR_REPLICATED, "The description of the mission")
+CreateConVar("my_tool_npc_class", "", FCVAR_REPLICATED, "The class of the NPC")
+CreateConVar("my_tool_npc_model", "", FCVAR_REPLICATED, "The model of the NPC")
+CreateConVar("my_tool_npc_weapon", "", FCVAR_REPLICATED, "The weapon of the NPC")
+CreateConVar("my_tool_npc_health", "", FCVAR_REPLICATED, "The health of the NPC")
+
+-- Tool settings
 TOOL.Category   = "[LGS] Citadel"
-TOOL.Name       = "Ciatdel Tool"
+TOOL.Name       = "Citadel Tool"
 TOOL.Command    = nil
 TOOL.ConfigName = ""
 
 if CLIENT then
+    -- Localization
     language.Add("tool.lgs_citadel_tool.name", "Citadel Tool")
     language.Add("tool.lgs_citadel_tool.desc", "LGS Citadel Tool to place NPCs and create missions")
     language.Add("tool.lgs_citadel_tool.0", "By Noahbds")
 
+    -- Fonts
     local fontParams = { font = "Arial", size = 30, weight = 1000, antialias = true, additive = false }
-
     surface.CreateFont("CTNV", fontParams)
     surface.CreateFont("CTNV2", fontParams)
 end
 
+-- Build the control panel for the tool
 function TOOL.BuildCPanel(panel)
     panel:AddControl("Header", { Text = "Mission Settings", Description = "Set the name and description of the mission" })
 
     panel:AddControl("TextBox", {
         Label = "Mission Name",
-        Text = "my_tool_mission_name",
-        MaxLenth = "50"
+        Command = "my_tool_mission_name",
+        MaxLength = "50"
     })
 
     panel:AddControl("TextBox", {
         Label = "Mission Description",
-        Text = "my_tool_mission_description",
-        MaxLenth = "100"
+        Command = "my_tool_mission_description",
+        MaxLength = "100"
     })
 
     panel:AddControl("Button", {
@@ -36,37 +46,35 @@ function TOOL.BuildCPanel(panel)
         Command = "my_tool_create_mission"
     })
 
-    -- Add a condition to check if the mission name is set before showing NPC settings
-    local missionName = GetConVarString("my_tool_mission_name")
-    if missionName ~= "" then
-        panel:AddControl("Header", { Text = "NPC Settings", Description = "Set the class and model of the NPC" })
+    -- Add NPC settings controls
+    panel:AddControl("Header", { Text = "NPC Settings", Description = "Set the class and model of the NPC" })
 
-        panel:AddControl("TextBox", {
-            Label = "NPC Class",
-            Text = "my_tool_npc_class",
-            MaxLenth = "50"
-        })
+    panel:AddControl("TextBox", {
+        Label = "NPC Class",
+        Command = "my_tool_npc_class",
+        MaxLength = "50"
+    })
 
-        panel:AddControl("TextBox", {
-            Label = "NPC Model",
-            Text = "my_tool_npc_model",
-            MaxLenth = "50"
-        })
+    panel:AddControl("TextBox", {
+        Label = "NPC Model",
+        Command = "my_tool_npc_model",
+        MaxLength = "50"
+    })
 
-        panel:AddControl("TextBox", {
-            Label = "NPC Weapon",
-            Text = "my_tool_npc_weapon",
-            MaxLenth = "50"
-        })
+    panel:AddControl("TextBox", {
+        Label = "NPC Weapon",
+        Command = "my_tool_npc_weapon",
+        MaxLength = "50"
+    })
 
-        panel:AddControl("TextBox", {
-            Label = "NPC Health",
-            Text = "my_tool_npc_health",
-            MaxLenth = "50"
-        })
-    end
+    panel:AddControl("TextBox", {
+        Label = "NPC Health",
+        Command = "my_tool_npc_health",
+        MaxLength = "50"
+    })
 end
 
+-- Draw the tool screen
 function TOOL:DrawToolScreen(width, height)
     surface.SetDrawColor(0, 0, 0, 255)
     surface.DrawRect(0, 0, width, height)
@@ -76,47 +84,96 @@ function TOOL:DrawToolScreen(width, height)
     surface.SetFont("CTNV2")
     local text2Width, text2Height = surface.GetTextSize("By Noahbds")
 
-    draw.SimpleText("addon_name", "CTNV", width / 2, 100, Color(224, 224, 224, 255), TEXT_ALIGN_CENTER,
-        TEXT_ALIGN_CENTER)
+    draw.SimpleText("addon_name", "CTNV", width / 2, 100, Color(224, 224, 224, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     draw.SimpleText("By Noahbds", "CTNV2", width / 2, 128 + (textHeight + text2Height) / 2 - 4, Color(224, 224, 224, 255),
         TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end
 
+-- Handle the primary attack (placing NPCs)
 function SWEP:PrimaryAttack()
     local ply = self:GetOwner()
     local tr = ply:GetEyeTrace()
 
-    local missionName = GetConVarString("my_tool_mission_name")
-    local missionDescription = GetConVarString("my_tool_mission_description") -- Get the mission description
-    local npcClass = GetConVarString("my_tool_npc_class")
-    local npcModel = GetConVarString("my_tool_npc_model")
-    local npcWeapon = GetConVarString("my_tool_npc_weapon")
-    local npcHealth = GetConVarString("my_tool_npc_health")
+    local missionName = GetConVar("my_tool_mission_name"):GetString()
+    local missionDescription = GetConVar("my_tool_mission_description"):GetString()
+    local npcClass = GetConVar("my_tool_npc_class"):GetString()
+    local npcModel = GetConVar("my_tool_npc_model"):GetString()
+    local npcWeapon = GetConVar("my_tool_npc_weapon"):GetString()
+    local npcHealth = GetConVar("my_tool_npc_health"):GetString()
 
     -- Check if mission is created and class and model are provided
     if missionName == "" or npcClass == "" or npcModel == "" or npcWeapon == "" then
+        print("Invalid input. Please fill in all fields.")
         return
     end
 
-    -- Check if class and model are valid
-    local validClasses = list.Get("NPC")
-    local validWepons = list.Get("Weapon")
-    local validModels = list.Get("PlayerOptionsModel")
-
-    if not validClasses[npcClass] or not validModels[npcModel] or not validWepons[npcWeapon] then
-        return
+    -- Check if mission folder exists
+    if not file.Exists("missions", "DATA") then
+        file.CreateDir("missions")
     end
 
-    if (tr.Hit) then
-        local data = missionDescription .. "\n" .. -- Include the mission description in the data
-            npcClass ..
-            " " ..
-            npcModel ..
-            " " ..
-            npcWeapon ..
-            " " ..
-            npcHealth ..
-            " " .. tostring(tr.HitPos.x) .. " " .. tostring(tr.HitPos.y) .. " " .. tostring(tr.HitPos.z) .. "\n"
-        file.Append(missionName .. "_npcpos.txt", data)
+    if tr.Hit then
+        -- Get the existing mission data or initialize an empty one
+        local missionFilePath = "missions/" .. missionName .. "_npcpos.txt"
+        local missionData = {}
+
+        if file.Exists(missionFilePath, "DATA") then
+            local existingData = file.Read(missionFilePath, "DATA")
+            missionData = util.JSONToTable(existingData) or {}
+        end
+
+        -- Add mission metadata if not already present
+        missionData.name = missionData.name or missionName
+        missionData.description = missionData.description or missionDescription
+
+        -- Add NPC data to the mission
+        local npcData = {
+            class = npcClass,
+            model = npcModel,
+            weapon = npcWeapon,
+            health = npcHealth,
+            pos = tostring(tr.HitPos)
+        }
+
+        -- Ensure "npcs" key exists and is an array
+        missionData.npcs = missionData.npcs or {}
+        table.insert(missionData.npcs, npcData)
+
+        -- Convert mission data to JSON
+        local missionDataJson = util.TableToJSON(missionData)
+
+        -- Write the JSON data to the mission file
+        file.Write(missionFilePath, missionDataJson)
+        print("NPC spawn position added for mission: " .. missionName)
     end
 end
+
+concommand.Add("my_tool_create_mission", function(ply, cmd, args)
+    -- Ensure that the "missions" folder exists
+    if not file.Exists("missions", "DATA") then
+        file.CreateDir("missions")
+    end
+
+    local missionName = GetConVar("my_tool_mission_name"):GetString() -- Get the mission name from the ConVar
+
+    -- Check if the mission name is defined
+    if missionName == "" then
+        print("The mission name is not defined.")
+        return
+    end
+
+    -- Initialize an empty table for mission data
+    local missionData = {}
+
+    -- Convert the mission data to JSON
+    local missionDataJson = util.TableToJSON(missionData)
+
+    -- Write the mission data to a file
+    file.Write("missions/" .. missionName .. "_npcpos.txt", missionDataJson)
+
+    -- Enable NPC settings controls
+    RunConsoleCommand("my_tool_npc_class", "")
+    RunConsoleCommand("my_tool_npc_model", "")
+    RunConsoleCommand("my_tool_npc_weapon", "")
+    RunConsoleCommand("my_tool_npc_health", "")
+end)

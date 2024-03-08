@@ -155,33 +155,3 @@ function SWEP:PrimaryAttack()
         print("NPC spawn position added for mission: " .. missionName)
     end
 end
-
-concommand.Add("my_tool_create_mission", function(ply, cmd, args)
-    -- Ensure that the "missions" folder exists
-    if not file.Exists("missions", "DATA") then
-        file.CreateDir("missions")
-    end
-
-    local missionName = GetConVar("my_tool_mission_name"):GetString() -- Get the mission name from the ConVar
-
-    -- Check if the mission name is defined
-    if missionName == "" then
-        print("The mission name is not defined.")
-        return
-    end
-
-    -- Initialize an empty table for mission data
-    local missionData = {}
-
-    -- Convert the mission data to JSON
-    local missionDataJson = util.TableToJSON(missionData)
-
-    -- Write the mission data to a file
-    file.Write("missions/" .. missionName .. "_npcpos.txt", missionDataJson)
-
-    -- Enable NPC settings controls
-    RunConsoleCommand("my_tool_npc_class", "")
-    RunConsoleCommand("my_tool_npc_model", "")
-    RunConsoleCommand("my_tool_npc_weapon", "")
-    RunConsoleCommand("my_tool_npc_health", "")
-end)

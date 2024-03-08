@@ -2,6 +2,7 @@
 
 local missionList = {}
 local selectedMission = "" -- Variable to store the selected mission name
+local missionTable = {}
 
 net.Receive("StartMission", function()
     local npc = net.ReadEntity() -- Get the NPC entity from the server
@@ -111,7 +112,7 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
     end
 
     -- Function to open the modify dialog
-    local function openModifyDialog(npcData, line)
+    local function openModifyDialog(npcData, line, missionTable)
         local editDialog = vgui.Create("DFrame")
         editDialog:SetSize(400, 400)
         editDialog:Center()
@@ -162,19 +163,17 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
             npcData.model = modelEntry:GetValue()
             npcData.weapon = weaponEntry:GetValue()
             npcData.health = healthEntry:GetValue()
+
             -- Update the list view
             line:SetColumnText(1, npcData.class)
             line:SetColumnText(2, npcData.model)
             line:SetColumnText(3, npcData.weapon)
             line:SetColumnText(4, npcData.health)
-            -- Check if missionTable is not nil before using it
-            if missionTable then
-                -- Save the updated missionTable to the mission file
-                local missionData = util.TableToJSON(missionTable)
-                file.Write(getMissionFilePath(getMissionName()), missionData)
-            else
-                print("Failed to save changes. Mission data is not available.")
-            end
+
+            -- Save the updated missionTable to the mission file
+            local missionData = util.TableToJSON(missionTable)
+            file.Write(getMissionFilePath(getMissionName()), missionData)
+
             editDialog:Close()
         end
 
@@ -242,7 +241,7 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
         modifyButton.DoClick = function()
             if selectedNpcData and selectedLine then
                 -- Open a dialog to edit NPC data
-                openModifyDialog(selectedNpcData, selectedLine)
+                openModifyDialog(selectedNpcData, selectedLine, missionTable)
             end
         end
     end

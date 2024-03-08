@@ -112,7 +112,7 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
     end
 
     -- Function to open the modify dialog
-    local function openModifyDialog(npcData, line, missionTable)
+    local function openModifyDialog(npcData, line, missionTable, listView)
         local editDialog = vgui.Create("DFrame")
         editDialog:SetSize(400, 400)
         editDialog:Center()
@@ -172,6 +172,14 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
             -- Save the updated missionTable to the mission file
             local missionData = util.TableToJSON(missionTable)
             file.Write(getMissionFilePath(getMissionName()), missionData)
+
+            -- Refresh the list view in real-time
+            listView:Clear()
+            for _, npcData in ipairs(missionTable.npcs) do
+                local newLine = listView:AddLine(npcData.class, npcData.model, npcData.weapon, npcData.health,
+                    npcData.pos)
+                newLine.npcData = npcData
+            end
 
             editDialog:Close()
         end
@@ -262,8 +270,7 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
 
         modifyButton.DoClick = function()
             if selectedNpcData and selectedLine then
-                -- Open a dialog to edit NPC data
-                openModifyDialog(selectedNpcData, selectedLine, missionTable)
+                openModifyDialog(selectedNpcData, selectedLine, missionTable, listView)
             end
         end
     end

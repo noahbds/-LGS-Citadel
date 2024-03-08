@@ -9,7 +9,8 @@ end
 util.AddNetworkString("StartMission") -- Used to communicate between the server and the client
 
 function StartMission(ply, cmd, args)
-    local missionName = args[1]                                                        -- Get the mission name from the arguments
+    local missionName = args
+        [1]                                                                            -- Get the mission name from the arguments
     local missionData = file.Read("missions/" .. missionName .. "_npcpos.txt", "DATA") -- Read the mission data from a file
     if missionData then
         local missionTable = util.JSONToTable(missionData)                             -- Convert the mission data from JSON to a table
@@ -24,7 +25,7 @@ function StartMission(ply, cmd, args)
             local npc = ents.Create(npcData.class)               -- Create an NPC of the specified class
             npc:SetModel(npcData.model)                          -- Set the model of the NPC
             npc:SetPos(util.StringToType(npcData.pos, "Vector")) -- Set the spawn position of the NPC
-            npc:SelectWeapon(npcData.weapon)                     -- Give the NPC the specified weapon
+            npc:Give(npcData.weapon)                             -- Give the NPC the specified weapon
             npc:SetHealth(npcData.health)                        -- Set the health of the NPC
             npc:Spawn()                                          -- Spawn the NPC
             net.Start("StartMission")

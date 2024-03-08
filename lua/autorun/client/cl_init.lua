@@ -76,3 +76,177 @@ function UpdateMissionListUI()
         listview:AddLine(missionName)
     end
 end
+
+concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
+    -- Function to get mission name
+    local function getMissionName()
+        return GetConVar("my_tool_mission_name"):GetString()
+    end
+
+    -- Function to get mission file path
+    local function getMissionFilePath(missionName)
+        return "missions/" .. missionName .. "_npcpos.txt"
+    end
+
+    -- Function to check if file exists
+    local function doesFileExist(filePath)
+        if not file.Exists(filePath, "DATA") then
+            print("Mission file not found.")
+            return false
+        end
+        return true
+    end
+
+    -- Function to read mission data
+    local function readMissionData(filePath)
+        local missionData = file.Read(filePath, "DATA")
+        local missionTable = util.JSONToTable(missionData)
+
+        if not missionTable then
+            print("Failed to parse mission data.")
+            return nil
+        end
+
+        return missionTable
+    end
+
+    -- Function to open the modify dialog
+    local function openModifyDialog(npcData, line)
+        local editDialog = vgui.Create("DFrame")
+        editDialog:SetSize(400, 400)
+        editDialog:Center()
+        editDialog:SetTitle("Edit NPC Data")
+
+        -- NPC Class
+        local classLabel = vgui.Create("DLabel", editDialog)
+        classLabel:SetText("NPC Class:")
+        classLabel:Dock(TOP)
+
+        local classEntry = vgui.Create("DTextEntry", editDialog)
+        classEntry:SetText(npcData.class)
+        classEntry:Dock(TOP)
+
+        -- NPC Model
+        local modelLabel = vgui.Create("DLabel", editDialog)
+        modelLabel:SetText("NPC Model:")
+        modelLabel:Dock(TOP)
+
+        local modelEntry = vgui.Create("DTextEntry", editDialog)
+        modelEntry:SetText(npcData.model)
+        modelEntry:Dock(TOP)
+
+        -- NPC Weapon
+        local weaponLabel = vgui.Create("DLabel", editDialog)
+        weaponLabel:SetText("NPC Weapon:")
+        weaponLabel:Dock(TOP)
+
+        local weaponEntry = vgui.Create("DTextEntry", editDialog)
+        weaponEntry:SetText(npcData.weapon)
+        weaponEntry:Dock(TOP)
+
+        -- NPC Health
+        local healthLabel = vgui.Create("DLabel", editDialog)
+        healthLabel:SetText("NPC Health:")
+        healthLabel:Dock(TOP)
+
+        local healthEntry = vgui.Create("DTextEntry", editDialog)
+        healthEntry:SetText(npcData.health)
+        healthEntry:Dock(TOP)
+
+        local saveButton = vgui.Create("DButton", editDialog)
+        saveButton:SetText("Save Changes")
+        saveButton:Dock(BOTTOM)
+        saveButton.DoClick = function()
+            -- Update NPC data and close the dialog
+            npcData.class = classEntry:GetValue()
+            npcData.model = modelEntry:GetValue()
+            npcData.weapon = weaponEntry:GetValue()
+            npcData.health = healthEntry:GetValue()
+            -- Update the list view
+            line:SetColumnText(1, npcData.class)
+            line:SetColumnText(2, npcData.model)
+            line:SetColumnText(3, npcData.weapon)
+            line:SetColumnText(4, npcData.health)
+            -- Check if missionTable is not nil before using it
+            if missionTable then
+                -- Save the updated missionTable to the mission file
+                local missionData = util.TableToJSON(missionTable)
+                file.Write(getMissionFilePath(getMissionName()), missionData)
+            else
+                print("Failed to save changes. Mission data is not available.")
+            end
+            editDialog:Close()
+        end
+
+        editDialog:MakePopup()
+    end
+
+    -- Main function
+    local function main()
+        local missionName = getMissionName()
+        local missionFilePath = getMissionFilePath(missionName)
+        print("Checking file: " .. missionFilePath)
+        if not doesFileExist(missionFilePath) then
+            return
+        end
+        local missionTable = readMissionData(missionFilePath)
+        if not missionTable then
+            return
+        end
+
+        -- Create a frame
+        local DPanel = vgui.Create("DPanel")
+        DPanel:SetSize(1200, 550)
+        DPanel:Center()
+        DPanel:MakePopup()
+
+        -- Add a list view to the frame to show NPC spawn positions
+        local listView = vgui.Create("DListView", DPanel)
+        listView:SetSize(1050, 500)
+        listView:SetPos(10, 10)
+        listView:AddColumn("NPC Class")
+        listView:AddColumn("NPC Model")
+        listView:AddColumn("NPC Weapon")
+        listView:AddColumn("NPC Health")
+        listView:AddColumn("NPC Position")
+
+        -- Add a close button to the frame
+        local closeButton = vgui.Create("DButton", DPanel)
+        closeButton:SetText("Close")
+        closeButton:SetSize(100, 30)
+        closeButton:SetPos(DPanel:GetWide() - 110, 10) -- Position the button at the top right corner
+        closeButton.DoClick = function()
+            DPanel:Remove()
+        end
+
+        -- Add a modify button to the frame
+        local modifyButton = vgui.Create("DButton", DPanel)
+        modifyButton:SetText("Modify")
+        modifyButton:SetSize(100, 30)
+        modifyButton:SetPos(DPanel:GetWide() - 110, 50) -- Position the button below the close button
+        modifyButton:SetEnabled(false)                  -- Disable the button by default
+
+        local selectedNpcData = nil
+        local selectedLine = nil
+
+        for _, npcData in ipairs(missionTable.npcs) do
+            local line = listView:AddLine(npcData.class, npcData.model, npcData.weapon, npcData.health, npcData.pos)
+            line.npcData = npcData            -- Store npcData in the line
+            listView.OnRowSelected = function(lst, index, pnl)
+                selectedNpcData = pnl.npcData -- Get npcData from the selected line
+                selectedLine = pnl
+                modifyButton:SetEnabled(true) -- Enable the button when a row is selected
+            end
+        end
+
+        modifyButton.DoClick = function()
+            if selectedNpcData and selectedLine then
+                -- Open a dialog to edit NPC data
+                openModifyDialog(selectedNpcData, selectedLine)
+            end
+        end
+    end
+
+    -- Call the main function
+    main()
+end)

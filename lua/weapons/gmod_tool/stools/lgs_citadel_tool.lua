@@ -72,6 +72,11 @@ function TOOL.BuildCPanel(panel)
         Command = "my_tool_npc_health",
         MaxLength = "50"
     })
+
+    panel:AddControl("Button", {
+        Text = "Modify NPC",
+        Command = "my_tool_modify_mission"
+    })
 end
 
 -- Draw the tool screen
@@ -141,6 +146,9 @@ function SWEP:PrimaryAttack()
 
         -- Convert mission data to JSON
         local missionDataJson = util.TableToJSON(missionData)
+
+        -- Call the base class's PrimaryAttack function to create the laser beam effect
+        self.BaseClass.PrimaryAttack(self)
 
         -- Write the JSON data to the mission file
         file.Write(missionFilePath, missionDataJson)

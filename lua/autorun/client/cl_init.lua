@@ -154,6 +154,28 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
         healthEntry:SetText(npcData.health)
         healthEntry:Dock(TOP)
 
+        local deleteButton = vgui.Create("DButton", editDialog)
+        deleteButton:SetText("Delete NPC")
+        deleteButton:Dock(BOTTOM)
+        deleteButton.DoClick = function()
+            -- Remove the line from the list view
+            line:Remove()
+
+            -- Remove the NPC data from missionTable
+            for i, data in ipairs(missionTable.npcs) do
+                if data == npcData then
+                    table.remove(missionTable.npcs, i)
+                    break
+                end
+            end
+
+            -- Save the updated missionTable to the mission file
+            local missionData = util.TableToJSON(missionTable)
+            file.Write(getMissionFilePath(getMissionName()), missionData)
+
+            editDialog:Close()
+        end
+
         local saveButton = vgui.Create("DButton", editDialog)
         saveButton:SetText("Save Changes")
         saveButton:Dock(BOTTOM)

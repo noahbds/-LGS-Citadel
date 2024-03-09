@@ -46,6 +46,21 @@ function TOOL.BuildCPanel(panel)
         Command = "my_tool_create_mission"
     })
 
+    -- Add a ListBox for the missions
+    panel:AddControl("Header", { Text = "Missions", Description = "List of created missions" })
+
+    local missions = {}
+    local files, _ = file.Find("missions/*", "DATA")
+    for _, file in ipairs(files) do
+        local missionName = string.gsub(file, "_npcpos.txt", "")
+        table.insert(missions, missionName)
+    end
+
+    panel:AddControl("ListBox", {
+        Label = "Missions",
+        Options = missions
+    })
+
     -- Add NPC settings controls
     panel:AddControl("Header", { Text = "NPC Settings", Description = "Set the class and model of the NPC" })
 

@@ -2,7 +2,6 @@
 
 local missionList = {}
 local selectedMission = "" -- Variable to store the selected mission name
-local missionTable = {}
 
 net.Receive("StartMission", function()
     local npc = net.ReadEntity() -- Get the NPC entity from the server

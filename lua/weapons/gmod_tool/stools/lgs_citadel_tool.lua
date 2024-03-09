@@ -212,3 +212,18 @@ function SWEP:PrimaryAttack()
         print("NPC spawn position added for mission: " .. missionName)
     end
 end
+
+function TOOL:DrawToolScreen(width, height)
+    surface.SetDrawColor(0, 0, 0, 255)
+    surface.DrawRect(0, 0, width, height)
+
+    surface.SetFont("CTNV")
+    local textWidth, textHeight = surface.GetTextSize("CTNV")
+    surface.SetFont("CTNV2")
+    local text2Width, text2Height = surface.GetTextSize("By Noahbds")
+
+    draw.SimpleText("[LGS] Auto Citadel ", "CTNV", width / 2, 100, Color(224, 224, 224, 255), TEXT_ALIGN_CENTER,
+        TEXT_ALIGN_CENTER)
+    draw.SimpleText("By Noahbds", "CTNV2", width / 2, 128 + (textHeight + text2Height) / 2 - 4, Color(224, 224, 224, 255),
+        TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+end

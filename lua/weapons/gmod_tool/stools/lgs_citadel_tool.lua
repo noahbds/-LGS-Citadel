@@ -84,7 +84,6 @@ function TOOL.BuildCPanel(panel)
         updateMissions()
     end
 
-    -- Rest of your code...
     panel:AddControl("Header", { Text = "Mission Settings", Description = "Set the name and description of the mission" })
 
     panel:AddControl("TextBox", {

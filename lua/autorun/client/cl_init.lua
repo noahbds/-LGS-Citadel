@@ -209,7 +209,6 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
         editDialog:MakePopup()
     end
 
-    -- Main function
     local function main()
         local missionName = getMissionName()
         local missionFilePath = getMissionFilePath(missionName)
@@ -218,7 +217,8 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
             return
         end
         local missionTable = readMissionData(missionFilePath)
-        if not missionTable then
+        if not missionTable or next(missionTable) == nil then
+            print("Mission data is empty.")
             return
         end
 

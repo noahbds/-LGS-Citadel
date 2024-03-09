@@ -27,6 +27,64 @@ end
 
 -- Build the control panel for the tool
 function TOOL.BuildCPanel(panel)
+    -- Add a ListBox for the missions
+    panel:AddControl("Header", { Text = "Missions", Description = "List of created missions" })
+
+    local listBox = vgui.Create("DListBox", panel)
+    listBox:SetSize(200, 200)
+    listBox:SetPos(10, 400) -- Set the position of the ListBox
+
+    -- Function to update the ListBox with the current missions
+    local function updateMissions()
+        listBox:Clear()
+
+        local files, _ = file.Find("missions/*", "DATA")
+        for _, file in ipairs(files) do
+            local missionName = string.gsub(file, "_npcpos.txt", "")
+            local item = listBox:AddItem(missionName) -- Get the item panel
+
+            -- Set up the OnSelect functionality
+            item.DoClick = function()
+                RunConsoleCommand("my_tool_mission_name", missionName)
+            end
+        end
+    end
+
+    -- Update the ListBox immediately
+    updateMissions()
+
+    -- Set up a timer to update the ListBox every second
+    timer.Create("UpdateMissionsTimer", 1, 0, updateMissions)
+
+
+    -- Create a custom button
+    local deleteButton = vgui.Create("DButton", panel)
+    deleteButton:SetText("Delete Mission")
+    deleteButton:SetSize(100, 30) -- Set the size of the button
+    deleteButton:SetPos(10, 350)  -- Set the position of the button
+
+    -- Set up the button click action
+    deleteButton.DoClick = function()
+        local missionName = GetConVar("my_tool_mission_name"):GetString()
+        if missionName == "" then
+            print("No mission name provided.")
+            return
+        end
+
+        local missionFilePath = "missions/" .. missionName .. "_npcpos.txt"
+        if not file.Exists(missionFilePath, "DATA") then
+            print("Mission not found: " .. missionName)
+            return
+        end
+
+        file.Delete(missionFilePath)
+        print("Mission deleted: " .. missionName)
+
+        -- Update the ListBox
+        updateMissions()
+    end
+
+    -- Rest of your code...
     panel:AddControl("Header", { Text = "Mission Settings", Description = "Set the name and description of the mission" })
 
     panel:AddControl("TextBox", {
@@ -44,27 +102,6 @@ function TOOL.BuildCPanel(panel)
     panel:AddControl("Button", {
         Text = "Create Mission",
         Command = "my_tool_create_mission"
-    })
-
-    -- Add a ListBox for the missions
-    panel:AddControl("Header", { Text = "Missions", Description = "List of created missions" })
-
-    local missions = {}
-    local files, _ = file.Find("missions/*", "DATA")
-    for _, file in ipairs(files) do
-        local missionName = string.gsub(file, "_npcpos.txt", "")
-        table.insert(missions, missionName)
-    end
-
-    -- Convert the missions array to a table of key-value pairs
-    local missionsOptions = {}
-    for _, missionName in ipairs(missions) do
-        missionsOptions[missionName] = { my_tool_select_mission = missionName }
-    end
-
-    panel:AddControl("ListBox", {
-        Label = "Missions",
-        Options = missionsOptions
     })
 
     -- Add NPC settings controls

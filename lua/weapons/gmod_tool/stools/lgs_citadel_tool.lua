@@ -56,9 +56,15 @@ function TOOL.BuildCPanel(panel)
         table.insert(missions, missionName)
     end
 
+    -- Convert the missions array to a table of key-value pairs
+    local missionsOptions = {}
+    for _, missionName in ipairs(missions) do
+        missionsOptions[missionName] = { my_tool_select_mission = missionName }
+    end
+
     panel:AddControl("ListBox", {
         Label = "Missions",
-        Options = missions
+        Options = missionsOptions
     })
 
     -- Add NPC settings controls

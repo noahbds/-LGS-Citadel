@@ -21,8 +21,8 @@ if CLIENT then
 
     -- Fonts
     local fontParams = { font = "Arial", size = 30, weight = 1000, antialias = true, additive = false }
-    surface.CreateFont("CTNV", fontParams)
-    surface.CreateFont("CTNV2", fontParams)
+    surface.CreateFont("LGSFONT", fontParams)
+    surface.CreateFont("LGSFONT2", fontParams)
 end
 
 -- Build the control panel for the tool
@@ -202,7 +202,7 @@ function SWEP:PrimaryAttack()
         table.insert(missionData.npcs, npcData)
 
         -- Convert mission data to JSON
-        local missionDataJson = util.TableToJSON(missionData)
+        local missionDataJson = util.TableToJSON(missionData, true)
 
         -- Call the base class's PrimaryAttack function to create the laser beam effect
         self.BaseClass.PrimaryAttack(self)
@@ -217,13 +217,14 @@ function TOOL:DrawToolScreen(width, height)
     surface.SetDrawColor(0, 0, 0, 255)
     surface.DrawRect(0, 0, width, height)
 
-    surface.SetFont("CTNV")
-    local textWidth, textHeight = surface.GetTextSize("CTNV")
-    surface.SetFont("CTNV2")
+    surface.SetFont("LGSFONT")
+    local textWidth, textHeight = surface.GetTextSize("[LGS] Auto Citadel")
+    surface.SetFont("LGSFONT2")
     local text2Width, text2Height = surface.GetTextSize("By Noahbds")
 
-    draw.SimpleText("[LGS] Auto Citadel ", "CTNV", width / 2, 100, Color(224, 224, 224, 255), TEXT_ALIGN_CENTER,
+    draw.SimpleText("[LGS] Auto Citadel", "LGSFONT", width / 2, 100, Color(224, 224, 224, 255), TEXT_ALIGN_CENTER,
         TEXT_ALIGN_CENTER)
-    draw.SimpleText("By Noahbds", "CTNV2", width / 2, 128 + (textHeight + text2Height) / 2 - 4, Color(224, 224, 224, 255),
+    draw.SimpleText("By Noahbds", "LGSFONT2", width / 2, 128 + (textHeight + text2Height) / 2 - 4,
+        Color(224, 224, 224, 255),
         TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end

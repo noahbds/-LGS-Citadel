@@ -169,7 +169,7 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
             end
 
             -- Save the updated missionTable to the mission file
-            local missionData = util.TableToJSON(missionTable)
+            local missionData = util.TableToJSON(missionTable, true) -- true for pretty formatting
             file.Write(getMissionFilePath(getMissionName()), missionData)
 
             -- Refresh the list view in real-time

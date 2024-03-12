@@ -33,7 +33,7 @@ local function DrawPath(startPos, endPos, color)
 end
 
 -- Function to draw the patrol path points
-local function DrawPatrolPath(patrolPathName, pathPoints)
+local function DrawPatrolPath(pathPoints)
     local color = Color(0, 255, 0) -- Green color for the points
     for i, point in ipairs(pathPoints) do
         render.DrawWireframeSphere(point, 10, 8, 8, color)
@@ -48,8 +48,8 @@ end
 
 -- Function to visualize all patrol paths
 local function VisualizeAllPatrolPaths()
-    for patrolPathName, pathPoints in pairs(patrolPaths) do
-        DrawPatrolPath(patrolPathName, pathPoints)
+    for _, pathPoints in pairs(patrolPaths) do
+        DrawPatrolPath(pathPoints)
     end
 end
 
@@ -77,11 +77,6 @@ function TOOL.BuildCPanel(panel)
     panel:AddControl("TextBox", {
         Label = "Patrol Path Name",
         Command = "my_tool_patrol_path_name"
-    })
-
-    panel:AddControl("Button", {
-        Text = "Create Patrol Path",
-        Command = "my_tool_create_patrol_path"
     })
 
     panel:AddControl("CheckBox", {

@@ -144,6 +144,16 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
         weaponEntry:SetText(npcData.weapon)
         weaponEntry:Dock(TOP)
 
+        -- NPC Weapon
+        local hostileLabel = vgui.Create("DLabel", editDialog)
+        hostileLabel:SetText("NPC Hostile:")
+        hostileLabel:Dock(TOP)
+
+        local hostileEntry = vgui.Create("DCheckBoxLabel", editDialog)
+        hostileEntry:SetText("Hostile")
+        hostileEntry:SetValue(npcData.hostile) -- Set the checkbox state
+        hostileEntry:Dock(TOP)
+
         -- NPC Health
         local healthLabel = vgui.Create("DLabel", editDialog)
         healthLabel:SetText("NPC Health:")
@@ -176,7 +186,7 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
             listView:Clear()
             for _, npcData in ipairs(missionTable.npcs) do
                 local newLine = listView:AddLine(npcData.class, npcData.model, npcData.weapon, npcData.health,
-                    npcData.pos)
+                    npcData.hostile, npcData.pos)
                 newLine.npcData = npcData
             end
 

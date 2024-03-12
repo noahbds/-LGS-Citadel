@@ -6,6 +6,8 @@ CreateConVar("my_tool_npc_class", "", FCVAR_REPLICATED, "The class of the NPC")
 CreateConVar("my_tool_npc_model", "", FCVAR_REPLICATED, "The model of the NPC")
 CreateConVar("my_tool_npc_weapon", "", FCVAR_REPLICATED, "The weapon of the NPC")
 CreateConVar("my_tool_npc_health", "", FCVAR_REPLICATED, "The health of the NPC")
+CreateConVar("my_tool_npc_hostile", "0", FCVAR_ARCHIVE, "Is the NPC hostile?")
+
 
 -- Tool settings
 TOOL.Category   = "[LGS] Citadel"
@@ -124,6 +126,11 @@ function TOOL.BuildCPanel(panel)
         MaxLength = "50"
     })
 
+    panel:AddControl("CheckBox", {
+        Label = "NPC Hostile",
+        Command = "my_tool_npc_hostile"
+    })
+
     panel:AddControl("TextBox", {
         Label = "NPC Health",
         Command = "my_tool_npc_health",
@@ -162,6 +169,7 @@ function SWEP:PrimaryAttack()
     local npcModel = GetConVar("my_tool_npc_model"):GetString()
     local npcWeapon = GetConVar("my_tool_npc_weapon"):GetString()
     local npcHealth = GetConVar("my_tool_npc_health"):GetString()
+    local npcHostile = GetConVar("my_tool_npc_hostile"):GetBool()
 
     -- Check if mission is created and class and model are provided
     if missionName == "" or npcClass == "" or npcModel == "" or npcWeapon == "" then
@@ -194,6 +202,7 @@ function SWEP:PrimaryAttack()
             model = npcModel,
             weapon = npcWeapon,
             health = npcHealth,
+            hostile = npcHostile,
             pos = tostring(tr.HitPos)
         }
 

@@ -7,6 +7,7 @@ CreateConVar("my_tool_npc_model", "", FCVAR_REPLICATED, "The model of the NPC")
 CreateConVar("my_tool_npc_weapon", "", FCVAR_REPLICATED, "The weapon of the NPC")
 CreateConVar("my_tool_npc_health", "", FCVAR_REPLICATED, "The health of the NPC")
 CreateConVar("my_tool_npc_hostile", "0", FCVAR_ARCHIVE, "Is the NPC hostile?")
+CreateConVar("my_tool_mission_patrol_path", "", FCVAR_REPLICATED, "The patrol path of the mission")
 
 -- Tool settings
 TOOL.Category   = "[LGS] Citadel"

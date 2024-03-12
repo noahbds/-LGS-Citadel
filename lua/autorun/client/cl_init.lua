@@ -1,12 +1,11 @@
 -- cl_init.lua
 
 local missionList = {}
-local selectedMission = "" -- Variable to store the selected mission name
+local selectedMission = ""
 
 net.Receive("StartMission", function()
-    local npc = net.ReadEntity() -- Get the NPC entity from the server
+    local npc = net.ReadEntity()
 
-    -- Add mission information to the list
     local missionName = GetConVar("my_tool_mission_name"):GetString()
     local missionDescription = GetConVar("my_tool_mission_description"):GetString()
 
@@ -14,53 +13,51 @@ net.Receive("StartMission", function()
         missionList[missionName] = missionDescription
     end
 
-    -- Refresh the UI with the updated mission list
     UpdateMissionListUI()
 end)
 
+-- user interface to start mission (to do : need to be open from a entity)
 concommand.Add("open_mission_selector", function()
-    local frame = vgui.Create("DFrame")                                                        -- Create a new frame
-    frame:SetSize(500, 300)                                                                    -- Set the size of the frame
-    frame:Center()                                                                             -- Center the frame on the screen
-    frame:SetTitle("Select a Mission")                                                         -- Set the title of the frame
-    frame:MakePopup()                                                                          -- Make the frame appear
+    local frame = vgui.Create("DFrame")
+    frame:SetSize(500, 300)
+    frame:Center()
+    frame:SetTitle("Select a Mission")
+    frame:MakePopup()
 
-    local listview = vgui.Create("DListView", frame)                                           -- Create a new list view
-    listview:SetSize(480, 150)                                                                 -- Set the size of the list view
-    listview:SetPos(10, 50)                                                                    -- Set the position of the list view
-    listview:AddColumn("Mission")                                                              -- Add a column to the list view
+    local listview = vgui.Create("DListView", frame)
+    listview:SetSize(480, 150)
+    listview:SetPos(10, 50)
+    listview:AddColumn("Mission")
 
-    local descriptionLabel = vgui.Create("DLabel", frame)                                      -- Create a new label
-    descriptionLabel:SetSize(480, 50)                                                          -- Set the size of the label
-    descriptionLabel:SetPos(10, 210)                                                           -- Set the position of the label
+    local descriptionLabel = vgui.Create("DLabel", frame)
+    descriptionLabel:SetSize(480, 50)
+    descriptionLabel:SetPos(10, 210)
 
-    local files = file.Find("missions/*.txt", "DATA")                                          -- Find all mission files
-    for _, file in ipairs(files) do                                                            -- For each file...
-        local missionName = string.gsub(file, "_npcpos.txt", "")                               -- Get the mission name from the file name
-        local missionFile = file.Read("missions/" .. selectedMission .. "_npcpos.txt", "DATA") -- Read the mission file                 -- Read the mission file
+    local files = file.Find("missions/*.txt", "DATA")
+    for _, file in ipairs(files) do
+        local missionName = string.gsub(file, "_npcpos.txt", "")
+        local missionFile = file.Read("missions/" .. missionName .. "_npcpos.txt", "DATA")
         local missionDescription = missionFile and missionFile:match("^(.-)\n") or
-            ""                                                                                 -- Get the mission description from the file
-        listview:AddLine(missionName)                                                          -- Add the mission to the list view
+            ""
+        listview:AddLine(missionName)
     end
 
-    local startButton = vgui.Create("DButton", frame) -- Create a new button
-    startButton:SetSize(480, 30)                      -- Set the size of the button
-    startButton:SetPos(10, 260)                       -- Set the position of the button
-    startButton:SetText("Start Mission")              -- Set the text of the button
-    startButton:SetEnabled(false)                     -- Disable the button by default
+    local startButton = vgui.Create("DButton", frame)
+    startButton:SetSize(480, 30)
+    startButton:SetPos(10, 260)
+    startButton:SetText("Start Mission")
+    startButton:SetEnabled(false)
 
-    -- Update the function to handle mission selection
     listview.OnRowSelected = function(lst, index, pnl)
-        selectedMission = pnl:GetColumnText(1)                                                 -- Get the selected mission name from the row
-        local missionFile = file.Read("missions/" .. selectedMission .. "_npcpos.txt", "DATA") -- Read the mission file
-        local missionDescription = missionFile:match("^(.-)\n")                                -- Get the mission description from the file
-        descriptionLabel:SetText("Description: " .. missionDescription)                        -- Set the text of the label to the mission description
-        startButton:SetEnabled(true)                                                           -- Enable the button when a mission is selected
+        selectedMission = pnl:GetColumnText(1)
+        local missionFile = file.Read("missions/" .. selectedMission .. "_npcpos.txt", "DATA")
+        local missionDescription = missionFile:match("^(.-)\n")
+        descriptionLabel:SetText("Description: " .. missionDescription)
+        startButton:SetEnabled(true)
     end
 
     startButton.DoClick = function()
         if selectedMission ~= "" then
-            -- Request the server to start the selected mission
             net.Start("StartMission")
             net.WriteString(selectedMission)
             net.SendToServer()
@@ -69,7 +66,6 @@ concommand.Add("open_mission_selector", function()
 end)
 
 function UpdateMissionListUI()
-    -- Update the UI with the mission list
     listview:Clear()
 
     for missionName, missionDescription in pairs(missionList) do
@@ -77,6 +73,7 @@ function UpdateMissionListUI()
     end
 end
 
+-- command to open the mission editor (can be open from the tool panel)
 concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
     -- Function to get mission name
     local function getMissionName()
@@ -167,7 +164,6 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
         deleteButton:SetText("Delete NPC")
         deleteButton:Dock(BOTTOM)
         deleteButton.DoClick = function()
-            -- Remove the line from the list view
             line:Remove()
 
             -- Remove the NPC data from missionTable
@@ -179,7 +175,7 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
             end
 
             -- Save the updated missionTable to the mission file
-            local missionData = util.TableToJSON(missionTable, true) -- true for pretty formatting
+            local missionData = util.TableToJSON(missionTable, true) -- true for pretty formatting :)
             file.Write(getMissionFilePath(getMissionName()), missionData)
 
             -- Refresh the list view in real-time
@@ -201,7 +197,7 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
             npcData.class = classEntry:GetValue()
             npcData.model = modelEntry:GetValue()
             npcData.weapon = weaponEntry:GetValue()
-            npcData.hostile = hostileEntry:GetChecked() -- Get the checkbox state
+            npcData.hostile = hostileEntry:GetChecked()
             npcData.health = healthEntry:GetValue()
 
             -- Update the list view
@@ -234,13 +230,11 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
             return
         end
 
-        -- Create a frame
         local DPanel = vgui.Create("DPanel")
         DPanel:SetSize(1200, 550)
         DPanel:Center()
         DPanel:MakePopup()
 
-        -- Add a list view to the frame to show NPC spawn positions
         local listView = vgui.Create("DListView", DPanel)
         listView:SetSize(1050, 500)
         listView:SetPos(10, 10)
@@ -251,21 +245,19 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
         listView:AddColumn("NPC Health")
         listView:AddColumn("NPC Position")
 
-        -- Add a close button to the frame
         local closeButton = vgui.Create("DButton", DPanel)
         closeButton:SetText("Close")
         closeButton:SetSize(100, 30)
-        closeButton:SetPos(DPanel:GetWide() - 110, 10) -- Position the button at the top right corner
+        closeButton:SetPos(DPanel:GetWide() - 110, 10)
         closeButton.DoClick = function()
             DPanel:Remove()
         end
 
-        -- Add a modify button to the frame
         local modifyButton = vgui.Create("DButton", DPanel)
         modifyButton:SetText("Modify")
         modifyButton:SetSize(100, 30)
-        modifyButton:SetPos(DPanel:GetWide() - 110, 50) -- Position the button below the close button
-        modifyButton:SetEnabled(false)                  -- Disable the button by default
+        modifyButton:SetPos(DPanel:GetWide() - 110, 50)
+        modifyButton:SetEnabled(false)
 
         local selectedNpcData = nil
         local selectedLine = nil
@@ -288,6 +280,5 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
         end
     end
 
-    -- Call the main function
     main()
 end)

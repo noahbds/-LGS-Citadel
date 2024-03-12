@@ -7,7 +7,6 @@ CreateConVar("my_tool_npc_model", "", FCVAR_REPLICATED, "The model of the NPC")
 CreateConVar("my_tool_npc_weapon", "", FCVAR_REPLICATED, "The weapon of the NPC")
 CreateConVar("my_tool_npc_health", "", FCVAR_REPLICATED, "The health of the NPC")
 CreateConVar("my_tool_npc_hostile", "0", FCVAR_ARCHIVE, "Is the NPC hostile?")
-CreateConVar("my_tool_mission_patrol_path", "", FCVAR_REPLICATED, "The patrol path of the mission")
 
 -- Tool settings
 TOOL.Category   = "[LGS] Citadel"
@@ -143,11 +142,6 @@ function TOOL.BuildCPanel(panel)
         MaxLength = "100"
     })
 
-    panel:AddControl("TextBox", {
-        Label = "Patrol Path Name",
-        Command = "my_tool_mission_patrol_path"
-    })
-
     panel:AddControl("Button", {
         Text = "Create Mission",
         Command = "my_tool_create_mission"
@@ -207,7 +201,7 @@ function TOOL:DrawToolScreen(width, height)
 end
 
 -- Handle the primary attack (placing NPCs)
-function TOOL:LeftClick(trace)
+function SWEP:PrimaryAttack()
     local ply = self:GetOwner()
     local tr = ply:GetEyeTrace()
 
@@ -218,7 +212,6 @@ function TOOL:LeftClick(trace)
     local npcWeapon = GetConVar("my_tool_npc_weapon"):GetString()
     local npcHealth = GetConVar("my_tool_npc_health"):GetString()
     local npcHostile = GetConVar("my_tool_npc_hostile"):GetBool()
-    local patrolPathName = GetConVar("my_tool_mission_patrol_path"):GetString()
 
     -- Check if mission is created and class and model are provided
     if missionName == "" or npcClass == "" or npcModel == "" or npcWeapon == "" then
@@ -255,11 +248,6 @@ function TOOL:LeftClick(trace)
             pos = tostring(tr.HitPos)
         }
 
-        -- If tied to a patrol, set the patrol path name in the mission data
-        if patrolPathName ~= "" then
-            missionData.patrolPath = patrolPathName
-        end
-
         -- Ensure "npcs" key exists and is an array
         missionData.npcs = missionData.npcs or {}
         table.insert(missionData.npcs, npcData)
@@ -267,9 +255,11 @@ function TOOL:LeftClick(trace)
         -- Convert mission data to JSON
         local missionDataJson = util.TableToJSON(missionData, true)
 
+        -- Call the base class's PrimaryAttack function to create the laser beam effect
+        self.BaseClass.PrimaryAttack(self)
+
         -- Write the JSON data to the mission file
         file.Write(missionFilePath, missionDataJson)
-
         print("NPC spawn position added for mission: " .. missionName)
     end
 end

@@ -8,7 +8,6 @@ CreateConVar("my_tool_npc_weapon", "", FCVAR_REPLICATED, "The weapon of the NPC"
 CreateConVar("my_tool_npc_health", "", FCVAR_REPLICATED, "The health of the NPC")
 CreateConVar("my_tool_npc_hostile", "0", FCVAR_ARCHIVE, "Is the NPC hostile?")
 
-
 -- Tool settings
 TOOL.Category   = "[LGS] Citadel"
 TOOL.Name       = "Citadel Tool"
@@ -27,14 +26,27 @@ if CLIENT then
     surface.CreateFont("LGSFONT2", fontParams)
 end
 
--- Build the control panel for the tool
 function TOOL.BuildCPanel(panel)
-    -- Add a ListBox for the missions
     panel:AddControl("Header", { Text = "Missions", Description = "List of created missions" })
 
     local listBox = vgui.Create("DListBox", panel)
     listBox:SetSize(200, 200)
-    listBox:SetPos(10, 400) -- Set the position of the ListBox
+    listBox:SetPos(10, 450)
+
+    local deleteButton = vgui.Create("DButton", panel)
+    deleteButton:SetText("Delete Mission")
+    deleteButton:SetSize(90, 30) -- Réduire la taille du bouton
+    deleteButton:SetPos(10, 380)
+
+    local startButton = vgui.Create("DButton", panel)
+    startButton:SetText("Start Mission")
+    startButton:SetSize(90, 30)  -- Réduire la taille du bouton
+    startButton:SetPos(110, 380) -- Ajuster la position du bouton
+
+    local cancelButton = vgui.Create("DButton", panel)
+    cancelButton:SetText("Cancel Mission")
+    cancelButton:SetSize(90, 30)  -- Réduire la taille du bouton
+    cancelButton:SetPos(210, 380) -- Ajuster la position du bouton
 
     -- Function to update the ListBox with the current missions
     local function updateMissions()
@@ -50,22 +62,14 @@ function TOOL.BuildCPanel(panel)
                 RunConsoleCommand("my_tool_mission_name", missionName)
             end
         end
+
+        -- Disable or enable buttons based on whether a mission name is provided
+        local missionName = GetConVar("my_tool_mission_name"):GetString()
+        deleteButton:SetEnabled(missionName ~= "")
+        startButton:SetEnabled(missionName ~= "")
+        cancelButton:SetEnabled(missionName ~= "")
     end
 
-    -- Update the ListBox immediately
-    updateMissions()
-
-    -- Set up a timer to update the ListBox every second
-    timer.Create("UpdateMissionsTimer", 1, 0, updateMissions)
-
-
-    -- Create a custom button
-    local deleteButton = vgui.Create("DButton", panel)
-    deleteButton:SetText("Delete Mission")
-    deleteButton:SetSize(100, 30) -- Set the size of the button
-    deleteButton:SetPos(10, 350)  -- Set the position of the button
-
-    -- Set up the button click action
     deleteButton.DoClick = function()
         local missionName = GetConVar("my_tool_mission_name"):GetString()
         if missionName == "" then
@@ -82,9 +86,47 @@ function TOOL.BuildCPanel(panel)
         file.Delete(missionFilePath)
         print("Mission deleted: " .. missionName)
 
-        -- Update the ListBox
         updateMissions()
     end
+
+    -- Set up the button click action
+    startButton.DoClick = function()
+        local missionName = GetConVar("my_tool_mission_name"):GetString()
+        if missionName == "" then
+            print("No mission name provided.")
+            return
+        end
+        local missionFilePath = "missions/" .. missionName .. "_npcpos.txt"
+        if not file.Exists(missionFilePath, "DATA") then
+            print("Mission not found: " .. missionName)
+            return
+        end
+
+        RunConsoleCommand("start_mission", missionName)
+        print("Mission started: " .. missionName)
+    end
+
+    cancelButton.DoClick = function()
+        local missionName = GetConVar("my_tool_mission_name"):GetString()
+        if missionName == "" then
+            print("No mission name provided.")
+            return
+        end
+        local missionFilePath = "missions/" .. missionName .. "_npcpos.txt"
+        if not file.Exists(missionFilePath, "DATA") then
+            print("Mission not found: " .. missionName)
+            return
+        end
+
+        RunConsoleCommand("cancel_mission", missionName)
+        print("Mission cancelled: " .. missionName)
+    end
+
+    -- Update the ListBox immediately
+    updateMissions()
+
+    -- Set up a timer to update the ListBox every second
+    timer.Create("UpdateMissionsTimer", 1, 0, updateMissions)
 
     panel:AddControl("Header", { Text = "Mission Settings", Description = "Set the name and description of the mission" })
 

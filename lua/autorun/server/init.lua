@@ -1,5 +1,8 @@
 -- init.lua
 
+-- store the NPCs of a mission
+local missionNPCs = {}
+
 resource.AddFile("weapons/tool_gun.lua") -- Add the tool gun to the list of available weapons
 
 if not file.Exists("missions", "DATA") then
@@ -27,15 +30,45 @@ function StartMission(ply, cmd, args)
             npc:SetPos(util.StringToType(npcData.pos, "Vector")) -- Set the spawn position of the NPC
             npc:Give(npcData.weapon)                             -- Give the NPC the specified weapon
             npc:SetHealth(npcData.health)                        -- Set the health of the NPC
-            npc:Spawn()                                          -- Spawn the NPC
+            if npcData.hostile then
+                npc:AddRelationship("player D_HT 99")
+            end
+            npc:Spawn() -- Spawn the NPC
             net.Start("StartMission")
             net.WriteEntity(npc)
             net.Send(ply) -- Send the NPC entity to the player
+
+            -- Add the NPC to the missionNPCs table
+            missionNPCs[missionName] = missionNPCs[missionName] or {}
+            table.insert(missionNPCs[missionName], npc)
         end
     end
 end
 
 concommand.Add("start_mission", StartMission) -- Add the start_mission command
+
+-- Add the cancel_mission command
+concommand.Add("cancel_mission", function(ply, cmd, args)
+    local missionName = args[1] -- Get the mission name from the arguments
+
+    -- Check if the mission exists
+    if not missionNPCs[missionName] then
+        print("The mission does not exist or is not active.")
+        return
+    end
+
+    -- Remove all NPCs of the mission
+    for _, npc in ipairs(missionNPCs[missionName]) do
+        if IsValid(npc) then
+            npc:Remove()
+        end
+    end
+
+    -- Clear the missionNPCs table for the mission
+    missionNPCs[missionName] = nil
+
+    print("Mission " .. missionName .. " has been cancelled.")
+end)
 
 concommand.Add("my_tool_create_mission", function(ply, cmd, args)
     -- Ensure that the "missions" folder exists
@@ -59,10 +92,4 @@ concommand.Add("my_tool_create_mission", function(ply, cmd, args)
 
     -- Write the mission data to a file
     file.Write("missions/" .. missionName .. "_npcpos.txt", missionDataJson)
-
-    -- Enable NPC settings controls
-    RunConsoleCommand("my_tool_npc_class", "")
-    RunConsoleCommand("my_tool_npc_model", "")
-    RunConsoleCommand("my_tool_npc_weapon", "")
-    RunConsoleCommand("my_tool_npc_health", "")
 end)

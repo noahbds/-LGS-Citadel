@@ -201,13 +201,15 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
             npcData.class = classEntry:GetValue()
             npcData.model = modelEntry:GetValue()
             npcData.weapon = weaponEntry:GetValue()
+            npcData.hostile = hostileEntry:GetChecked() -- Get the checkbox state
             npcData.health = healthEntry:GetValue()
 
             -- Update the list view
             line:SetColumnText(1, npcData.class)
             line:SetColumnText(2, npcData.model)
             line:SetColumnText(3, npcData.weapon)
-            line:SetColumnText(4, npcData.health)
+            line:SetColumnText(4, npcData.hostile)
+            line:SetColumnText(5, npcData.health)
 
             -- Save the updated missionTable to the mission file
             local missionData = util.TableToJSON(missionTable)
@@ -245,6 +247,7 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
         listView:AddColumn("NPC Class")
         listView:AddColumn("NPC Model")
         listView:AddColumn("NPC Weapon")
+        listView:AddColumn("NPC Hostility")
         listView:AddColumn("NPC Health")
         listView:AddColumn("NPC Position")
 
@@ -268,12 +271,13 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
         local selectedLine = nil
 
         for _, npcData in ipairs(missionTable.npcs) do
-            local line = listView:AddLine(npcData.class, npcData.model, npcData.weapon, npcData.health, npcData.pos)
-            line.npcData = npcData            -- Store npcData in the line
+            local line = listView:AddLine(npcData.class, npcData.model, npcData.weapon, npcData.health, npcData.hostile,
+                npcData.pos)
+            line.npcData = npcData
             listView.OnRowSelected = function(lst, index, pnl)
-                selectedNpcData = pnl.npcData -- Get npcData from the selected line
+                selectedNpcData = pnl.npcData
                 selectedLine = pnl
-                modifyButton:SetEnabled(true) -- Enable the button when a row is selected
+                modifyButton:SetEnabled(true)
             end
         end
 

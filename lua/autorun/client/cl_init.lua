@@ -282,3 +282,22 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
 
     main()
 end)
+
+net.Receive("VisualizeMission", function(len)
+    local npcData = net.ReadTable()
+
+    -- Create a "phantom" entity at the NPC's position
+    local phantom = ents.CreateClientProp(npcData.model)
+    phantom:SetPos(util.StringToType(npcData.pos, "Vector"))
+    phantom:SetColor(Color(255, 255, 255, 100)) -- Set the color to white with 100 alpha for transparency
+    phantom:Spawn()
+
+    -- Disable AI
+    phantom:DisableAI(true)
+
+    -- Make the phantom non-movable
+    phantom:SetMoveType(MOVETYPE_NONE)
+
+    -- Disable collisions
+    phantom:SetCollisionGroup(COLLISION_GROUP_IN_VEHICLE)
+end)

@@ -143,6 +143,11 @@ function TOOL.BuildCPanel(panel)
         MaxLength = "100"
     })
 
+    panel:AddControl("TextBox", {
+        Label = "Patrol Path Name",
+        Command = "my_tool_mission_patrol_path"
+    })
+
     panel:AddControl("Button", {
         Text = "Create Mission",
         Command = "my_tool_create_mission"
@@ -202,7 +207,7 @@ function TOOL:DrawToolScreen(width, height)
 end
 
 -- Handle the primary attack (placing NPCs)
-function SWEP:PrimaryAttack()
+function TOOL:LeftClick(trace)
     local ply = self:GetOwner()
     local tr = ply:GetEyeTrace()
 
@@ -213,6 +218,7 @@ function SWEP:PrimaryAttack()
     local npcWeapon = GetConVar("my_tool_npc_weapon"):GetString()
     local npcHealth = GetConVar("my_tool_npc_health"):GetString()
     local npcHostile = GetConVar("my_tool_npc_hostile"):GetBool()
+    local patrolPathName = GetConVar("my_tool_mission_patrol_path"):GetString()
 
     -- Check if mission is created and class and model are provided
     if missionName == "" or npcClass == "" or npcModel == "" or npcWeapon == "" then
@@ -249,6 +255,11 @@ function SWEP:PrimaryAttack()
             pos = tostring(tr.HitPos)
         }
 
+        -- If tied to a patrol, set the patrol path name in the mission data
+        if patrolPathName ~= "" then
+            missionData.patrolPath = patrolPathName
+        end
+
         -- Ensure "npcs" key exists and is an array
         missionData.npcs = missionData.npcs or {}
         table.insert(missionData.npcs, npcData)
@@ -256,11 +267,9 @@ function SWEP:PrimaryAttack()
         -- Convert mission data to JSON
         local missionDataJson = util.TableToJSON(missionData, true)
 
-        -- Call the base class's PrimaryAttack function to create the laser beam effect
-        self.BaseClass.PrimaryAttack(self)
-
         -- Write the JSON data to the mission file
         file.Write(missionFilePath, missionDataJson)
+
         print("NPC spawn position added for mission: " .. missionName)
     end
 end

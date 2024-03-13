@@ -299,11 +299,11 @@ net.Receive("VisualizeMission", function(len)
     -- Create a "phantom" entity at the NPC's position
     local phantom = ents.CreateClientProp(npcData.model)
     phantom:SetPos(util.StringToType(npcData.pos, "Vector"))
-    phantom:SetColor(Color(255, 255, 255, 100)) -- Set the color to white with 100 alpha for transparency
+    phantom:SetRenderMode(RENDERMODE_TRANSALPHA) -- Set the render mode to transparent
+    phantom:SetLocalAngles(Angle(0, 0, 0))       -- Set the local angles to zero
+    phantom:SetRenderFX(kRenderFxPulseFast)      -- Set the render effect to pulse fast
+    phantom:SetColor(Color(255, 255, 255, 100))  -- Set the color to white with 100 alpha for transparency
     phantom:Spawn()
-
-    -- Disable AI
-    phantom:DisableAI(true)
 
     -- Make the phantom non-movable
     phantom:SetMoveType(MOVETYPE_NONE)

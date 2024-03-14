@@ -269,7 +269,7 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
     main()
 end)
 
--- Visualize Mission
+
 local frames = {}
 
 net.Receive("VisualizeMission", function(len)

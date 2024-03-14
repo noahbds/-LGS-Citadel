@@ -269,13 +269,12 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
     main()
 end)
 
-
-local frames = {}
+local phantoms = {} -- Table to store the phantoms and their corresponding NPC data
 
 net.Receive("VisualizeMission", function(len)
-    local npcData = net.ReadTable()
+    local npcData = net.ReadTable()                      -- Read NPC data from the network message
 
-    local phantom = ents.CreateClientProp(npcData.model)
+    local phantom = ents.CreateClientProp(npcData.model) -- Create a phantom entity
     phantom:SetPos(util.StringToType(npcData.pos, "Vector"))
     phantom:SetRenderMode(RENDERMODE_TRANSALPHA)
     phantom:SetLocalAngles(Angle(0, 0, 0))
@@ -284,65 +283,44 @@ net.Receive("VisualizeMission", function(len)
     phantom:Spawn()
 
     phantom:SetMoveType(MOVETYPE_NONE)
-
     phantom:SetCollisionGroup(COLLISION_GROUP_IN_VEHICLE)
 
-    local frame = vgui.Create("DPanel")
-    frame:SetSize(350, 150)
-    frame.Paint = function(self, w, h)
-        draw.RoundedBox(8, 0, 0, w, h, Color(50, 50, 50, 200))
+    table.insert(phantoms, { phantom = phantom, npcData = npcData }) -- Store the phantom and its NPC data
 
-        draw.SimpleText("NPC Class: " .. npcData.class, "DermaDefaultBold", 10, 10, Color(255, 255, 255), TEXT_ALIGN_LEFT,
-            TEXT_ALIGN_TOP)
-        draw.SimpleText("NPC Weapon: " .. npcData.weapon, "DermaDefaultBold", 10, 30, Color(255, 255, 255),
-            TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-        draw.SimpleText("NPC Model: " .. npcData.model, "DermaDefaultBold", 10, 50, Color(255, 255, 255), TEXT_ALIGN_LEFT,
-            TEXT_ALIGN_TOP)
-        draw.SimpleText("NPC Health: " .. npcData.health, "DermaDefaultBold", 10, 70, Color(255, 255, 255),
-            TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-        draw.SimpleText("NPC Hostile: " .. (npcData.hostile and "Yes" or "No"), "DermaDefaultBold", 10, 90,
-            Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-        draw.SimpleText("NPC Spawn Pos: " .. npcData.pos, "DermaDefaultBold", 10, 110, Color(255, 255, 255),
-            TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-    end
+    hook.Add("PostDrawOpaqueRenderables", "DrawFrame", function()
+        for _, data in ipairs(phantoms) do
+            local phantom = data.phantom
+            local npcData = data.npcData
 
-    local function UpdateFramePosition()
-        local phantomPos = phantom:GetPos():ToScreen()
-        frame:SetPos(phantomPos.x - frame:GetWide() / 2, phantomPos.y - frame:GetTall() - 20)
-    end
+            if IsValid(phantom) then
+                local playerPos = LocalPlayer():GetPos()
+                local phantomPos = phantom:GetPos()
+                local distance = playerPos:Distance(phantomPos)
 
-    table.insert(frames, { frame = frame, phantom = phantom })
+                if distance <= 300 then
+                    local pos = phantomPos + Vector(0, 0, 50)
+                    local ang = Angle(0, LocalPlayer():EyeAngles().yaw - 90, 90)
 
-    frame.Think = function()
-        UpdateFramePosition()
+                    cam.Start3D2D(pos, ang, 0.1)
+                    surface.SetDrawColor(50, 50, 50, 200)
+                    surface.DrawRect(0, 0, 350, 150)
 
-        local playerPos = LocalPlayer():GetPos()
-        local anyVisible = false
-
-        for _, data in ipairs(frames) do
-            local distance = playerPos:Distance(data.phantom:GetPos())
-
-            -- Calculate the distance from the player to the center of the sphere
-            local sphereRadius = 300
-            local centerToPlayer = playerPos - data.phantom:GetPos()
-
-            -- Check if the player is within the sphere
-            if centerToPlayer:Length() <= sphereRadius then
-                data.frame:SetVisible(true)
-                anyVisible = true
-            else
-                data.frame:SetVisible(false)
+                    -- Display NPC data
+                    draw.SimpleText("NPC Class: " .. npcData.class, "DermaDefaultBold", 10, 10, Color(255, 255, 255),
+                        TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+                    draw.SimpleText("NPC Weapon: " .. npcData.weapon, "DermaDefaultBold", 10, 30, Color(255, 255, 255),
+                        TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+                    draw.SimpleText("NPC Model: " .. npcData.model, "DermaDefaultBold", 10, 50, Color(255, 255, 255),
+                        TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+                    draw.SimpleText("NPC Health: " .. npcData.health, "DermaDefaultBold", 10, 70, Color(255, 255, 255),
+                        TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+                    draw.SimpleText("NPC Hostile: " .. (npcData.hostile and "Yes" or "No"), "DermaDefaultBold", 10, 90,
+                        Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+                    draw.SimpleText("NPC Spawn Pos: " .. npcData.pos, "DermaDefaultBold", 10, 110, Color(255, 255, 255),
+                        TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+                    cam.End3D2D()
+                end
             end
         end
-
-        if not anyVisible and playerPos.z < 100 then
-            for _, data in ipairs(frames) do
-                data.frame:SetVisible(true)
-            end
-        end
-    end
-
-    phantom:CallOnRemove("RemoveFrame", function()
-        frame:Remove()
     end)
 end)

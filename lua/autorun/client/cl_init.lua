@@ -269,12 +269,15 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
     main()
 end)
 
-local phantoms = {} -- Table to store the phantoms and their corresponding NPC data
+-- visualize missionNPCs
+local phantoms = {}
+local panelWidth = 350
+local panelHeight = 150
 
 net.Receive("VisualizeMission", function(len)
-    local npcData = net.ReadTable()                      -- Read NPC data from the network message
+    local npcData = net.ReadTable()
 
-    local phantom = ents.CreateClientProp(npcData.model) -- Create a phantom entity
+    local phantom = ents.CreateClientProp(npcData.model)
     phantom:SetPos(util.StringToType(npcData.pos, "Vector"))
     phantom:SetRenderMode(RENDERMODE_TRANSALPHA)
     phantom:SetLocalAngles(Angle(0, 0, 0))
@@ -285,7 +288,7 @@ net.Receive("VisualizeMission", function(len)
     phantom:SetMoveType(MOVETYPE_NONE)
     phantom:SetCollisionGroup(COLLISION_GROUP_IN_VEHICLE)
 
-    table.insert(phantoms, { phantom = phantom, npcData = npcData }) -- Store the phantom and its NPC data
+    table.insert(phantoms, { phantom = phantom, npcData = npcData })
 
     hook.Add("PostDrawOpaqueRenderables", "DrawFrame", function()
         for _, data in ipairs(phantoms) do
@@ -301,23 +304,27 @@ net.Receive("VisualizeMission", function(len)
                     local pos = phantomPos + Vector(0, 0, 50)
                     local ang = Angle(0, LocalPlayer():EyeAngles().yaw - 90, 90)
 
+                    -- Calculate the offset to center the 3D2D panel on the phantom
+                    local offsetX = -panelWidth / 2
+                    local offsetY = -panelHeight / 2
+
                     cam.Start3D2D(pos, ang, 0.1)
                     surface.SetDrawColor(50, 50, 50, 200)
-                    surface.DrawRect(0, 0, 350, 150)
+                    surface.DrawRect(offsetX, offsetY, panelWidth, panelHeight)
 
                     -- Display NPC data
-                    draw.SimpleText("NPC Class: " .. npcData.class, "DermaDefaultBold", 10, 10, Color(255, 255, 255),
-                        TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-                    draw.SimpleText("NPC Weapon: " .. npcData.weapon, "DermaDefaultBold", 10, 30, Color(255, 255, 255),
-                        TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-                    draw.SimpleText("NPC Model: " .. npcData.model, "DermaDefaultBold", 10, 50, Color(255, 255, 255),
-                        TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-                    draw.SimpleText("NPC Health: " .. npcData.health, "DermaDefaultBold", 10, 70, Color(255, 255, 255),
-                        TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-                    draw.SimpleText("NPC Hostile: " .. (npcData.hostile and "Yes" or "No"), "DermaDefaultBold", 10, 90,
+                    draw.SimpleText("NPC Class: " .. npcData.class, "DermaDefaultBold", offsetX + 10, offsetY + 10,
                         Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-                    draw.SimpleText("NPC Spawn Pos: " .. npcData.pos, "DermaDefaultBold", 10, 110, Color(255, 255, 255),
-                        TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+                    draw.SimpleText("NPC Weapon: " .. npcData.weapon, "DermaDefaultBold", offsetX + 10, offsetY + 30,
+                        Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+                    draw.SimpleText("NPC Model: " .. npcData.model, "DermaDefaultBold", offsetX + 10, offsetY + 50,
+                        Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+                    draw.SimpleText("NPC Health: " .. npcData.health, "DermaDefaultBold", offsetX + 10, offsetY + 70,
+                        Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+                    draw.SimpleText("NPC Hostile: " .. (npcData.hostile and "Yes" or "No"), "DermaDefaultBold",
+                        offsetX + 10, offsetY + 90, Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+                    draw.SimpleText("NPC Spawn Pos: " .. npcData.pos, "DermaDefaultBold", offsetX + 10, offsetY + 110,
+                        Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
                     cam.End3D2D()
                 end
             end

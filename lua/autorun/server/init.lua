@@ -43,21 +43,32 @@ function StartMission(ply, cmd, args)
         print("Mission Description: " .. missionDescription)
 
         for _, npcData in ipairs(missionTable.npcs) do
-            local npc = ents.Create(npcData.class)               -- Create an NPC of the specified class
-            npc:SetModel(npcData.model)                          -- Set the model of the NPC
-            npc:SetPos(util.StringToType(npcData.pos, "Vector")) -- Set the spawn position of the NPC
-            npc:Give(npcData.weapon)                             -- Give the NPC the specified weapon
-            npc:SetHealth(npcData.health)                        -- Set the health of the NPC
+            local npc = ents.Create(npcData.class)
+            npc:SetModel(npcData.model)
+            npc:SetPos(util.StringToType(npcData.pos, "Vector"))
+            npc:Give(npcData.weapon)
+            npc:SetHealth(npcData.health)
+
             if npcData.hostile then
                 npc:AddRelationship("player D_HT 99")
+            else
+                npc:AddRelationship("player D_LI 99")
             end
-            npc:Spawn() -- Spawn the NPC
+
+            missionNPCs[missionName] = missionNPCs[missionName] or {}
+            for _, otherNpc in ipairs(missionNPCs[missionName]) do
+                if IsValid(otherNpc) and otherNpc ~= npc then
+                    -- Make the NPC neutral to all other NPCs
+                    npc:AddEntityRelationship(otherNpc, D_NU, 99)
+                    otherNpc:AddEntityRelationship(npc, D_NU, 99)
+                end
+            end
+
+            npc:Spawn()
             net.Start("StartMission")
             net.WriteEntity(npc)
-            net.Send(ply) -- Send the NPC entity to the player
+            net.Send(ply)
 
-            -- Add the NPC to the missionNPCs table
-            missionNPCs[missionName] = missionNPCs[missionName] or {}
             table.insert(missionNPCs[missionName], npc)
         end
     end

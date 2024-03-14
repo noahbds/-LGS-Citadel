@@ -318,28 +318,24 @@ net.Receive("VisualizeMission", function(len)
 
         local playerPos = LocalPlayer():GetPos()
         local anyVisible = false
-        local anyPhantomInSphere = false
 
         for _, data in ipairs(frames) do
             local distance = playerPos:Distance(data.phantom:GetPos())
+
+            -- Calculate the distance from the player to the center of the sphere
             local sphereRadius = 300
             local centerToPlayer = playerPos - data.phantom:GetPos()
 
+            -- Check if the player is within the sphere
             if centerToPlayer:Length() <= sphereRadius then
                 data.frame:SetVisible(true)
                 anyVisible = true
-                anyPhantomInSphere = true
             else
                 data.frame:SetVisible(false)
             end
         end
 
-        if not anyPhantomInSphere then
-            for _, data in ipairs(frames) do
-                data.frame:SetVisible(false)
-            end
-        elseif not anyVisible then
-            -- If there are phantoms in the sphere but no frame is visible, show frames.
+        if not anyVisible and playerPos.z < 100 then
             for _, data in ipairs(frames) do
                 data.frame:SetVisible(true)
             end

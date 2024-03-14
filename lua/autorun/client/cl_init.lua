@@ -241,7 +241,6 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
         DPanel:Center()
         DPanel:MakePopup()
 
-        -- Add a list view to the frame to show NPC spawn positions
         local listView = vgui.Create("DListView", DPanel)
         listView:SetSize(1050, 500)
         listView:SetPos(10, 10)
@@ -252,21 +251,19 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
         listView:AddColumn("NPC Hostility")
         listView:AddColumn("NPC Position")
 
-        -- Add a close button to the frame
         local closeButton = vgui.Create("DButton", DPanel)
         closeButton:SetText("Close")
         closeButton:SetSize(100, 30)
-        closeButton:SetPos(DPanel:GetWide() - 110, 10) -- Position the button at the top right corner
+        closeButton:SetPos(DPanel:GetWide() - 110, 10)
         closeButton.DoClick = function()
             DPanel:Remove()
         end
 
-        -- Add a modify button to the frame
         local modifyButton = vgui.Create("DButton", DPanel)
         modifyButton:SetText("Modify")
         modifyButton:SetSize(100, 30)
-        modifyButton:SetPos(DPanel:GetWide() - 110, 50) -- Position the button below the close button
-        modifyButton:SetEnabled(false)                  -- Disable the button by default
+        modifyButton:SetPos(DPanel:GetWide() - 110, 50)
+        modifyButton:SetEnabled(false)
 
         local selectedNpcData = nil
         local selectedLine = nil
@@ -289,25 +286,85 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
         end
     end
 
-    -- Call the main function
     main()
 end)
+
+
+local frames = {}
 
 net.Receive("VisualizeMission", function(len)
     local npcData = net.ReadTable()
 
-    -- Create a "phantom" entity at the NPC's position
     local phantom = ents.CreateClientProp(npcData.model)
     phantom:SetPos(util.StringToType(npcData.pos, "Vector"))
-    phantom:SetRenderMode(RENDERMODE_TRANSALPHA) -- Set the render mode to transparent
-    phantom:SetLocalAngles(Angle(0, 0, 0))       -- Set the local angles to zero
-    phantom:SetRenderFX(kRenderFxPulseFast)      -- Set the render effect to pulse fast
-    phantom:SetColor(Color(255, 255, 255, 100))  -- Set the color to white with 100 alpha for transparency
+    phantom:SetRenderMode(RENDERMODE_TRANSALPHA)
+    phantom:SetLocalAngles(Angle(0, 0, 0))
+    phantom:SetRenderFX(kRenderFxPulseFast)
+    phantom:SetColor(Color(255, 255, 255, 100))
     phantom:Spawn()
 
-    -- Make the phantom non-movable
     phantom:SetMoveType(MOVETYPE_NONE)
 
-    -- Disable collisions
     phantom:SetCollisionGroup(COLLISION_GROUP_IN_VEHICLE)
+
+    local frame = vgui.Create("DPanel")
+    frame:SetSize(350, 150)
+    frame.Paint = function(self, w, h)
+        draw.RoundedBox(8, 0, 0, w, h, Color(50, 50, 50, 200))
+
+        draw.SimpleText("NPC Class: " .. npcData.class, "DermaDefaultBold", 10, 10, Color(255, 255, 255), TEXT_ALIGN_LEFT,
+            TEXT_ALIGN_TOP)
+        draw.SimpleText("NPC Weapon: " .. npcData.weapon, "DermaDefaultBold", 10, 30, Color(255, 255, 255),
+            TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+        draw.SimpleText("NPC Model: " .. npcData.model, "DermaDefaultBold", 10, 50, Color(255, 255, 255), TEXT_ALIGN_LEFT,
+            TEXT_ALIGN_TOP)
+        draw.SimpleText("NPC Health: " .. npcData.health, "DermaDefaultBold", 10, 70, Color(255, 255, 255),
+            TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+        draw.SimpleText("NPC Hostile: " .. (npcData.hostile and "Yes" or "No"), "DermaDefaultBold", 10, 90,
+            Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+        draw.SimpleText("NPC Spawn Pos: " .. npcData.pos, "DermaDefaultBold", 10, 110, Color(255, 255, 255),
+            TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+    end
+
+    local function UpdateFramePosition()
+        local phantomPos = phantom:GetPos():ToScreen()
+        frame:SetPos(phantomPos.x - frame:GetWide() / 2, phantomPos.y - frame:GetTall() - 20)
+    end
+
+    table.insert(frames, { frame = frame, phantom = phantom })
+
+    frame.Think = function()
+        UpdateFramePosition()
+
+        local playerPos = LocalPlayer():GetPos()
+        local anyVisible = false
+
+        for _, data in ipairs(frames) do
+            local distance = playerPos:Distance(data.phantom:GetPos())
+
+            -- Calculate the distance from the player to the center of the sphere
+            local sphereRadius = 300
+            local centerToPlayer = playerPos - data.phantom:GetPos()
+
+            -- Check if the player is within the sphere
+            if centerToPlayer:Length() <= sphereRadius then
+                data.frame:SetVisible(true)
+                anyVisible = true
+            else
+                data.frame:SetVisible(false)
+            end
+        end
+
+        if not anyVisible and playerPos.z < 100 then
+            for _, data in ipairs(frames) do
+                data.frame:SetVisible(true)
+            end
+        end
+    end
+
+
+
+    phantom:CallOnRemove("RemoveFrame", function()
+        frame:Remove()
+    end)
 end)

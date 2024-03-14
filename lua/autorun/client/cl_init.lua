@@ -269,7 +269,7 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
     main()
 end)
 
--- Visualize Mission
+
 local frames = {}
 
 net.Receive("VisualizeMission", function(len)
@@ -336,15 +336,6 @@ net.Receive("VisualizeMission", function(len)
         if not anyVisible and playerPos.z < 100 then
             for _, data in ipairs(frames) do
                 data.frame:SetVisible(true)
-            end
-        elseif anyVisible then
-            for _, data in ipairs(frames) do
-                local distance = playerPos:Distance(data.phantom:GetPos())
-                local sphereRadius = 300
-                local centerToPlayer = playerPos - data.phantom:GetPos()
-                if centerToPlayer:Length() <= sphereRadius then
-                    data.frame:SetVisible(true)
-                end
             end
         end
     end

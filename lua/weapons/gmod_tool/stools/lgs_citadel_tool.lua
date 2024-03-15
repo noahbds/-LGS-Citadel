@@ -48,6 +48,11 @@ function TOOL.BuildCPanel(panel)
     cancelButton:SetSize(90, 30)  -- Réduire la taille du bouton
     cancelButton:SetPos(210, 380) -- Ajuster la position du bouton
 
+    local visualizeButton = vgui.Create("DButton", panel)
+    visualizeButton:SetText("Visualize Mission")
+    visualizeButton:SetSize(90, 30)  -- Réduire la taille du bouton
+    visualizeButton:SetPos(210, 380) -- Ajuster la position du bouton
+
     -- Function to update the ListBox with the current missions
     local function updateMissions()
         listBox:Clear()
@@ -68,6 +73,7 @@ function TOOL.BuildCPanel(panel)
         deleteButton:SetEnabled(missionName ~= "")
         startButton:SetEnabled(missionName ~= "")
         cancelButton:SetEnabled(missionName ~= "")
+        visualizeButton:SetEnabled(missionName ~= "")
     end
 
     deleteButton.DoClick = function()
@@ -120,6 +126,17 @@ function TOOL.BuildCPanel(panel)
 
         RunConsoleCommand("cancel_mission", missionName)
         print("Mission cancelled: " .. missionName)
+    end
+
+    visualizeButton.DoClick = function()
+        local missionName = GetConVar("my_tool_mission_name"):GetString()
+        if missionName == "" then
+            print("No mission name provided.")
+            return
+        end
+
+        RunConsoleCommand("visualize_mission", missionName)
+        print("Mission visualized: " .. missionName)
     end
 
     -- Update the ListBox immediately
@@ -214,7 +231,7 @@ function SWEP:PrimaryAttack()
     local npcHostile = GetConVar("my_tool_npc_hostile"):GetBool()
 
     -- Check if mission is created and class and model are provided
-    if missionName == "" or npcClass == "" or npcModel == "" or npcWeapon == "" then
+    if missionName == "" or npcClass == "" or npcModel == "" then
         print("Invalid input. Please fill in all fields.")
         return
     end

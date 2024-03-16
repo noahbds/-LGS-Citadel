@@ -33,6 +33,7 @@ function createNPC(npcData)
     local npcPos = util.StringToType(npcData.pos, "Vector")
     local npcHealth = npcData.health or 100
     local isHostile = npcData.hostile
+    local npcWeaponProficiency = npcData.weaponProficiency
 
     local npc
 
@@ -64,6 +65,7 @@ function createNPC(npcData)
     end
 
     npc:Give(npcWeapon)
+    npc:SetCurrentWeaponProficiency(npcWeaponProficiency)
     npc:SetHealth(npcHealth)
 
     if isHostile then

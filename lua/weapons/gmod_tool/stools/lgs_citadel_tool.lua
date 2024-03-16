@@ -7,6 +7,7 @@ CreateConVar("my_tool_npc_model", "", FCVAR_REPLICATED, "The model of the NPC")
 CreateConVar("my_tool_npc_weapon", "", FCVAR_REPLICATED, "The weapon of the NPC")
 CreateConVar("my_tool_npc_health", "", FCVAR_REPLICATED, "The health of the NPC")
 CreateConVar("my_tool_npc_hostile", "0", FCVAR_ARCHIVE, "Is the NPC hostile?")
+CreateConVar("my_tool_npc_weapon_proficiency", "0", FCVAR_ARCHIVE, "Weapon proficiency of the NPC")
 
 -- Tool settings
 TOOL.Category   = "[LGS] Citadel"
@@ -185,6 +186,15 @@ function TOOL.BuildCPanel(panel)
         MaxLength = "50"
     })
 
+    panel:AddControl("Slider", {
+        Label = "Weapon Proficiency",
+        Command = "my_tool_npc_weapon_proficiency",
+        Type = "Float",
+        Min = 0,
+        Max = 4,
+        Help = "0: Poor, 1: Average, 2: Good, 3: Very Good, 4: Perfect"
+    })
+
     panel:AddControl("CheckBox", {
         Label = "NPC Hostile",
         Command = "my_tool_npc_hostile"
@@ -227,6 +237,7 @@ function TOOL:LeftClick(trace)
     local npcWeapon = GetConVar("my_tool_npc_weapon"):GetString()
     local npcHealth = GetConVar("my_tool_npc_health"):GetString()
     local npcHostile = GetConVar("my_tool_npc_hostile"):GetBool()
+    local npcWeaponProficiency = GetConVar("my_tool_npc_weapon_proficiency"):GetFloat()
 
     -- Check if mission is created and class and model are provided
     if missionName == "" or npcClass == "" or npcModel == "" then
@@ -263,7 +274,8 @@ function TOOL:LeftClick(trace)
             weapon = npcWeapon,
             health = npcHealth,
             hostile = npcHostile,
-            pos = tostring(trace.HitPos)
+            pos = tostring(trace.HitPos),
+            weaponProficiency = npcWeaponProficiency
         }
 
         -- Ensure "npcs" key exists and is an array

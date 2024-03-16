@@ -21,41 +21,59 @@ local listview -- déclaration de la variable globale
 
 concommand.Add("open_mission_selector", function()
     local frame = vgui.Create("DFrame")
-    frame:SetSize(500, 300)
+    frame:SetSize(800, 500) -- Taille augmentée de la fenêtre
     frame:Center()
     frame:SetTitle("Select a Mission")
     frame:MakePopup()
 
-    listview = vgui.Create("DListView", frame) -- utilisation de la variable globale
-    listview:SetSize(480, 150)
-    listview:SetPos(10, 50)
+    local panel = vgui.Create("DPanel", frame)
+    panel:Dock(FILL)
+    panel:SetBackgroundColor(Color(50, 50, 50, 200))
+
+    local listview = vgui.Create("DListView", panel)
+    listview:Dock(LEFT)
+    listview:SetWide(350)      -- Largeur de la liste augmentée
+    listview:SetHeaderText("Mission")
+    listview:SetDataHeight(30) -- Hauteur des lignes augmentée
     listview:AddColumn("Mission")
-    local descriptionLabel = vgui.Create("DLabel", frame)
-    descriptionLabel:SetSize(480, 50)
-    descriptionLabel:SetPos(10, 210)
+
+    local descriptionPanel = vgui.Create("DPanel", panel)
+    descriptionPanel:Dock(FILL)
+    descriptionPanel:SetBackgroundColor(Color(70, 70, 70, 200))
+
+    local descriptionLabel = vgui.Create("DLabel", descriptionPanel)
+    descriptionLabel:Dock(FILL)
+    descriptionLabel:SetContentAlignment(7) -- Centre l'alignement du texte
+    descriptionLabel:SetTextColor(Color(255, 255, 255))
+    descriptionLabel:SetFont("DermaDefaultBold")
+    descriptionLabel:SetText("Select a mission to view description")
+
+    local startButton = vgui.Create("DButton", frame)
+    startButton:Dock(BOTTOM)
+    startButton:DockMargin(0, 10, 0, 0)
+    startButton:SetText("Start Mission")
+    startButton:SetTextColor(Color(255, 255, 255))
+    startButton:SetFont("DermaDefaultBold")
+    startButton:SetColor(Color(0, 100, 0))
+    startButton:SetDisabled(true)
+
     local missionFiles = file.Find("missions/*.txt", "DATA")
     for _, missionFile in ipairs(missionFiles) do
         local missionName = string.gsub(missionFile, "_npcpos.txt", "")
-        local missionContent = file.Read("missions/" .. missionName .. "_npcpos.txt", "DATA")
-        local missionDescription = missionContent and missionContent:match("^(.-)\n") or ""
         listview:AddLine(missionName)
     end
-    local startButton = vgui.Create("DButton", frame)
-    startButton:SetSize(480, 30)
-    startButton:SetPos(10, 260)
-    startButton:SetText("Start Mission")
-    startButton:SetEnabled(false)
+
     listview.OnRowSelected = function(lst, index, pnl)
-        selectedMission = pnl:GetColumnText(1)
+        local selectedMission = pnl:GetColumnText(1)
         local missionContent = file.Read("missions/" .. selectedMission .. "_npcpos.txt", "DATA")
         descriptionLabel:SetText(missionContent)
-        startButton:SetEnabled(true)
-    end
-    startButton.DoClick = function()
-        RunConsoleCommand("start_mission", selectedMission)
+        startButton:SetDisabled(false)
+        startButton.DoClick = function()
+            RunConsoleCommand("start_mission", selectedMission)
+            frame:Close()
+        end
     end
 end)
-
 
 function UpdateMissionListUI()
     if listview then -- vérifie si listview est défini
@@ -266,7 +284,7 @@ end)
 -- visualize missionNPCs
 local phantoms = {}
 local panelWidth = 350
-local panelHeight = 150
+local panelHeight = 180
 
 net.Receive("VisualizeMission", function(len)
     local npcData = net.ReadTable()
@@ -298,6 +316,12 @@ net.Receive("VisualizeMission", function(len)
                     local pos = phantomPos + Vector(0, 0, 50)
                     local ang = Angle(0, LocalPlayer():EyeAngles().yaw - 90, 90)
 
+                    -- Calculate text size for dynamic panel dimensions
+                    surface.SetFont("DermaDefaultBold")
+                    local textWidth, textHeight = surface.GetTextSize("NPC Class: " .. npcData.class)
+                    local panelWidth = textWidth + 20
+                    local panelHeight = textHeight * 7 -- Adjust multiplier based on the number of lines
+
                     -- Calculate the offset to center the 3D2D panel on the phantom
                     local offsetX = -panelWidth / 2
                     local offsetY = -panelHeight / 2
@@ -307,17 +331,26 @@ net.Receive("VisualizeMission", function(len)
                     surface.DrawRect(offsetX, offsetY, panelWidth, panelHeight)
 
                     -- Display NPC data
-                    draw.SimpleText("NPC Class: " .. npcData.class, "DermaDefaultBold", offsetX + 10, offsetY + 10,
+                    local yPos = offsetY + 10
+                    draw.SimpleText("NPC Class: " .. npcData.class, "DermaDefaultBold", offsetX + 10, yPos,
                         Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-                    draw.SimpleText("NPC Weapon: " .. npcData.weapon, "DermaDefaultBold", offsetX + 10, offsetY + 30,
+                    yPos = yPos + textHeight + 5
+                    draw.SimpleText("NPC Weapon: " .. npcData.weapon, "DermaDefaultBold", offsetX + 10, yPos,
                         Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-                    draw.SimpleText("NPC Model: " .. npcData.model, "DermaDefaultBold", offsetX + 10, offsetY + 50,
+                    yPos = yPos + textHeight + 5
+                    draw.SimpleText("NPC Weapon Proficiency: " .. npcData.weaponProficiency, "DermaDefaultBold",
+                        offsetX + 10, yPos, Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+                    yPos = yPos + textHeight + 5
+                    draw.SimpleText("NPC Model: " .. npcData.model, "DermaDefaultBold", offsetX + 10, yPos,
                         Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-                    draw.SimpleText("NPC Health: " .. npcData.health, "DermaDefaultBold", offsetX + 10, offsetY + 70,
+                    yPos = yPos + textHeight + 5
+                    draw.SimpleText("NPC Health: " .. npcData.health, "DermaDefaultBold", offsetX + 10, yPos,
                         Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+                    yPos = yPos + textHeight + 5
                     draw.SimpleText("NPC Hostile: " .. (npcData.hostile and "Yes" or "No"), "DermaDefaultBold",
-                        offsetX + 10, offsetY + 90, Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-                    draw.SimpleText("NPC Spawn Pos: " .. npcData.pos, "DermaDefaultBold", offsetX + 10, offsetY + 110,
+                        offsetX + 10, yPos, Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+                    yPos = yPos + textHeight + 5
+                    draw.SimpleText("NPC Spawn Pos: " .. npcData.pos, "DermaDefaultBold", offsetX + 10, yPos,
                         Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
                     cam.End3D2D()
                 end

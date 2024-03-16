@@ -51,7 +51,7 @@ function TOOL.BuildCPanel(panel)
     local visualizeButton = vgui.Create("DButton", panel)
     visualizeButton:SetText("Visualize Mission")
     visualizeButton:SetSize(90, 30)  -- Réduire la taille du bouton
-    visualizeButton:SetPos(210, 380) -- Ajuster la position du bouton
+    visualizeButton:SetPos(310, 380) -- Ajuster la position du bouton
 
     -- Function to update the ListBox with the current missions
     local function updateMissions()
@@ -217,10 +217,8 @@ function TOOL:DrawToolScreen(width, height)
         TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end
 
--- Handle the primary attack (placing NPCs)
-function SWEP:PrimaryAttack()
+function TOOL:LeftClick(trace)
     local ply = self:GetOwner()
-    local tr = ply:GetEyeTrace()
 
     local missionName = GetConVar("my_tool_mission_name"):GetString()
     local missionDescription = GetConVar("my_tool_mission_description"):GetString()
@@ -241,7 +239,7 @@ function SWEP:PrimaryAttack()
         file.CreateDir("missions")
     end
 
-    if tr.Hit then
+    if trace.Hit then
         -- Get the existing mission data or initialize an empty one
         local missionFilePath = "missions/" .. missionName .. "_npcpos.txt"
         local missionData = {}
@@ -262,7 +260,7 @@ function SWEP:PrimaryAttack()
             weapon = npcWeapon,
             health = npcHealth,
             hostile = npcHostile,
-            pos = tostring(tr.HitPos)
+            pos = tostring(trace.HitPos)
         }
 
         -- Ensure "npcs" key exists and is an array
@@ -271,9 +269,6 @@ function SWEP:PrimaryAttack()
 
         -- Convert mission data to JSON
         local missionDataJson = util.TableToJSON(missionData, true)
-
-        -- Call the base class's PrimaryAttack function to create the laser beam effect
-        self.BaseClass.PrimaryAttack(self)
 
         -- Write the JSON data to the mission file
         file.Write(missionFilePath, missionDataJson)

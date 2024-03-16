@@ -1,30 +1,27 @@
 -- init.lua
 
--- store the NPCs of a mission
 local missionNPCs = {}
 
-resource.AddFile("weapons/tool_gun.lua") -- Add the tool gun to the list of available weapons
-
+resource.AddFile("weapons/tool_gun.lua")
 if not file.Exists("missions", "DATA") then
     file.CreateDir("missions")
 end
 
-util.AddNetworkString("StartMission") -- Used to communicate between the server and the client
+util.AddNetworkString("StartMission")
 
 util.AddNetworkString("VisualizeMission")
 
 concommand.Add("visualize_mission", function(ply, cmd, args)
     local missionName = args
-        [1]                                                                            -- Get the mission name from the arguments
-    local missionData = file.Read("missions/" .. missionName .. "_npcpos.txt", "DATA") -- Read the mission data from a file
-
+        [1]
+    local missionData = file.Read("missions/" .. missionName .. "_npcpos.txt", "DATA")
     if missionData then
-        local missionTable = util.JSONToTable(missionData) -- Convert the mission data from JSON to a table
+        local missionTable = util.JSONToTable(missionData)
 
         for _, npcData in ipairs(missionTable.npcs) do
             net.Start("VisualizeMission")
             net.WriteTable(npcData)
-            net.Send(ply) -- Send the NPC data to the player
+            net.Send(ply)
         end
     end
 end)
@@ -48,7 +45,6 @@ function createNPC(npcData)
         npc:SetPos(npcPos)
         npc:Spawn()
 
-        -- Make the VJ Base NPC neutral to all other NPCs
         for _, otherNpc in ipairs(ents.FindByClass("npc_*")) do
             if IsValid(otherNpc) and otherNpc ~= npc then
                 npc:AddEntityRelationship(otherNpc, D_NU, 99)
@@ -60,9 +56,13 @@ function createNPC(npcData)
         return nil
     end
 
-    -- Set common properties for all NPCs
     npc:SetModel(npcModel)
     npc:SetPos(npcPos)
+
+    if npcWeapon == nil then
+        npcWeapon = "default_weapon"
+    end
+
     npc:Give(npcWeapon)
     npc:SetHealth(npcHealth)
 
@@ -99,7 +99,6 @@ function StartMission(player, command, arguments)
         if npc then
             for _, otherNpc in ipairs(missionNPCs[missionName]) do
                 if IsValid(otherNpc) and otherNpc ~= npc then
-                    -- Make the NPC neutral to all other NPCs
                     npc:AddEntityRelationship(otherNpc, D_NU, 99)
                     otherNpc:AddEntityRelationship(npc, D_NU, 99)
                 end
@@ -115,51 +114,44 @@ function StartMission(player, command, arguments)
     end
 end
 
-concommand.Add("start_mission", StartMission) -- Add the start_mission command
+concommand.Add("start_mission", StartMission)
 
--- Add the cancel_mission command
 concommand.Add("cancel_mission", function(ply, cmd, args)
-    local missionName = args[1] -- Get the mission name from the arguments
+    local missionName = args[1]
 
-    -- Check if the mission exists
     if not missionNPCs[missionName] then
         print("The mission does not exist or is not active.")
         return
     end
 
-    -- Remove all NPCs of the mission
     for _, npc in ipairs(missionNPCs[missionName]) do
         if IsValid(npc) then
-            npc:Remove()
+            if npc:IsNextBot() then
+                npc:Remove()
+            end
         end
     end
 
-    -- Clear the missionNPCs table for the mission
     missionNPCs[missionName] = nil
 
     print("Mission " .. missionName .. " has been cancelled.")
 end)
 
 concommand.Add("my_tool_create_mission", function(ply, cmd, args)
-    -- Ensure that the "missions" folder exists
     if not file.Exists("missions", "DATA") then
         file.CreateDir("missions")
     end
 
-    local missionName = GetConVar("my_tool_mission_name"):GetString() -- Get the mission name from the ConVar
+    local missionName = GetConVar("my_tool_mission_name"):GetString()
 
-    -- Check if the mission name is defined
     if missionName == "" then
         print("The mission name is not defined.")
         return
     end
 
-    -- Initialize an empty table for mission data
     local missionData = {}
 
-    -- Convert the mission data to JSON
     local missionDataJson = util.TableToJSON(missionData)
 
-    -- Write the mission data to a file
     file.Write("missions/" .. missionName .. "_npcpos.txt", missionDataJson)
 end)

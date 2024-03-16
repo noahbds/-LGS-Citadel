@@ -84,7 +84,18 @@ function StartMission(player, command, arguments)
         return
     end
 
+    -- Get the current map name
+    local currentMap = game.GetMap()
+
+    -- Convert the mission data from JSON to a Lua table
     local missionTable = util.JSONToTable(missionData)
+
+    -- Check if the map in the mission data matches the current map
+    if missionTable.map ~= currentMap then
+        print("The mission cannot be started because the map does not match.")
+        return
+    end
+
     local missionName = missionTable.name
     local missionDescription = missionTable.description
 

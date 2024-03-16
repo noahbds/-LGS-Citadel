@@ -253,6 +253,9 @@ function TOOL:LeftClick(trace)
         missionData.name = missionData.name or missionName
         missionData.description = missionData.description or missionDescription
 
+        -- Add the map name to the mission data
+        missionData.map = game.GetMap()
+
         -- Add NPC data to the mission
         local npcData = {
             class = npcClass,

@@ -16,7 +16,9 @@ net.Receive("StartMission", function()
     UpdateMissionListUI()
 end)
 
--- not working for now (TO DO: fix it)
+
+local listview -- déclaration de la variable globale
+
 concommand.Add("open_mission_selector", function()
     local frame = vgui.Create("DFrame")
     frame:SetSize(500, 300)
@@ -24,52 +26,44 @@ concommand.Add("open_mission_selector", function()
     frame:SetTitle("Select a Mission")
     frame:MakePopup()
 
-    local listview = vgui.Create("DListView", frame)
+    listview = vgui.Create("DListView", frame) -- utilisation de la variable globale
     listview:SetSize(480, 150)
     listview:SetPos(10, 50)
     listview:AddColumn("Mission")
-
     local descriptionLabel = vgui.Create("DLabel", frame)
     descriptionLabel:SetSize(480, 50)
     descriptionLabel:SetPos(10, 210)
-
-    local files = file.Find("missions/*.txt", "DATA")
-    for _, file in ipairs(files) do
-        local missionName = string.gsub(file, "_npcpos.txt", "")
-        local missionFile = file.Read("missions/" .. missionName .. "_npcpos.txt", "DATA")
-        local missionDescription = missionFile and missionFile:match("^(.-)\n") or
-            ""
+    local missionFiles = file.Find("missions/*.txt", "DATA")
+    for _, missionFile in ipairs(missionFiles) do
+        local missionName = string.gsub(missionFile, "_npcpos.txt", "")
+        local missionContent = file.Read("missions/" .. missionName .. "_npcpos.txt", "DATA")
+        local missionDescription = missionContent and missionContent:match("^(.-)\n") or ""
         listview:AddLine(missionName)
     end
-
     local startButton = vgui.Create("DButton", frame)
     startButton:SetSize(480, 30)
     startButton:SetPos(10, 260)
     startButton:SetText("Start Mission")
     startButton:SetEnabled(false)
-
     listview.OnRowSelected = function(lst, index, pnl)
         selectedMission = pnl:GetColumnText(1)
-        local missionFile = file.Read("missions/" .. selectedMission .. "_npcpos.txt", "DATA")
-        local missionDescription = missionFile:match("^(.-)\n")
-        descriptionLabel:SetText("Description: " .. missionDescription)
+        local missionContent = file.Read("missions/" .. selectedMission .. "_npcpos.txt", "DATA")
+        descriptionLabel:SetText(missionContent)
         startButton:SetEnabled(true)
     end
-
     startButton.DoClick = function()
-        if selectedMission ~= "" then
-            net.Start("StartMission")
-            net.WriteString(selectedMission)
-            net.SendToServer()
-        end
+        RunConsoleCommand("start_mission", selectedMission)
     end
 end)
 
-function UpdateMissionListUI()
-    listview:Clear()
 
-    for missionName, missionDescription in pairs(missionList) do
-        listview:AddLine(missionName)
+function UpdateMissionListUI()
+    if listview then -- vérifie si listview est défini
+        listview:Clear()
+
+        for missionName, missionDescription in pairs(missionList) do
+            listview:AddLine(missionName)
+        end
     end
 end
 

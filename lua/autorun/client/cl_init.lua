@@ -307,7 +307,7 @@ net.Receive("VisualizeMission", function(len)
             local phantom = data.phantom
             local npcData = data.npcData
 
-            if IsValid(phantom) then
+            if IsValid(phantom) and npcData then
                 local playerPos = LocalPlayer():GetPos()
                 local phantomPos = phantom:GetPos()
                 local distance = playerPos:Distance(phantomPos)
@@ -318,9 +318,25 @@ net.Receive("VisualizeMission", function(len)
 
                     -- Calculate text size for dynamic panel dimensions
                     surface.SetFont("DermaDefaultBold")
-                    local textWidth, textHeight = surface.GetTextSize("NPC Class: " .. npcData.class)
-                    local panelWidth = textWidth + 20
-                    local panelHeight = textHeight * 7 -- Adjust multiplier based on the number of lines
+                    local panelWidth = 0
+                    local panelHeight = 10
+                    local textSpacing = 5
+
+                    local function drawTextLine(text)
+                        if text then
+                            local textWidth, textHeight = surface.GetTextSize(text)
+                            panelWidth = math.max(panelWidth, textWidth + 20)
+                            panelHeight = panelHeight + textHeight + textSpacing
+                        end
+                    end
+
+                    drawTextLine("NPC Class: " .. (npcData.class or ""))
+                    drawTextLine("NPC Weapon: " .. (npcData.weapon or ""))
+                    drawTextLine("NPC Weapon Proficiency: " .. (npcData.weaponProficiency or ""))
+                    drawTextLine("NPC Model: " .. (npcData.model or ""))
+                    drawTextLine("NPC Health: " .. (npcData.health or ""))
+                    drawTextLine("NPC Hostile: " .. ((npcData.hostile ~= nil and npcData.hostile) and "Yes" or "No"))
+                    drawTextLine("NPC Spawn Pos: " .. (npcData.pos or ""))
 
                     -- Calculate the offset to center the 3D2D panel on the phantom
                     local offsetX = -panelWidth / 2
@@ -332,26 +348,36 @@ net.Receive("VisualizeMission", function(len)
 
                     -- Display NPC data
                     local yPos = offsetY + 10
-                    draw.SimpleText("NPC Class: " .. npcData.class, "DermaDefaultBold", offsetX + 10, yPos,
+                    drawTextLine("NPC Class: " .. (npcData.class or ""))
+                    drawTextLine("NPC Weapon: " .. (npcData.weapon or ""))
+                    drawTextLine("NPC Weapon Proficiency: " .. (npcData.weaponProficiency or ""))
+                    drawTextLine("NPC Model: " .. (npcData.model or ""))
+                    drawTextLine("NPC Health: " .. (npcData.health or ""))
+                    drawTextLine("NPC Hostile: " .. ((npcData.hostile ~= nil and npcData.hostile) and "Yes" or "No"))
+                    drawTextLine("NPC Spawn Pos: " .. (npcData.pos or ""))
+
+                    yPos = offsetY + 10
+                    draw.SimpleText("NPC Class: " .. (npcData.class or ""), "DermaDefaultBold", offsetX + 10, yPos,
                         Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-                    yPos = yPos + textHeight + 5
-                    draw.SimpleText("NPC Weapon: " .. npcData.weapon, "DermaDefaultBold", offsetX + 10, yPos,
+                    yPos = yPos + textHeight + textSpacing
+                    draw.SimpleText("NPC Weapon: " .. (npcData.weapon or ""), "DermaDefaultBold", offsetX + 10, yPos,
                         Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-                    yPos = yPos + textHeight + 5
-                    draw.SimpleText("NPC Weapon Proficiency: " .. npcData.weaponProficiency, "DermaDefaultBold",
+                    yPos = yPos + textHeight + textSpacing
+                    draw.SimpleText("NPC Weapon Proficiency: " .. (npcData.weaponProficiency or ""), "DermaDefaultBold",
                         offsetX + 10, yPos, Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-                    yPos = yPos + textHeight + 5
-                    draw.SimpleText("NPC Model: " .. npcData.model, "DermaDefaultBold", offsetX + 10, yPos,
+                    yPos = yPos + textHeight + textSpacing
+                    draw.SimpleText("NPC Model: " .. (npcData.model or ""), "DermaDefaultBold", offsetX + 10, yPos,
                         Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-                    yPos = yPos + textHeight + 5
-                    draw.SimpleText("NPC Health: " .. npcData.health, "DermaDefaultBold", offsetX + 10, yPos,
+                    yPos = yPos + textHeight + textSpacing
+                    draw.SimpleText("NPC Health: " .. (npcData.health or ""), "DermaDefaultBold", offsetX + 10, yPos,
                         Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-                    yPos = yPos + textHeight + 5
-                    draw.SimpleText("NPC Hostile: " .. (npcData.hostile and "Yes" or "No"), "DermaDefaultBold",
-                        offsetX + 10, yPos, Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-                    yPos = yPos + textHeight + 5
-                    draw.SimpleText("NPC Spawn Pos: " .. npcData.pos, "DermaDefaultBold", offsetX + 10, yPos,
+                    yPos = yPos + textHeight + textSpacing
+                    draw.SimpleText("NPC Hostile: " .. ((npcData.hostile ~= nil and npcData.hostile) and "Yes" or "No"),
+                        "DermaDefaultBold", offsetX + 10, yPos, Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+                    yPos = yPos + textHeight + textSpacing
+                    draw.SimpleText("NPC Spawn Pos: " .. (npcData.pos or ""), "DermaDefaultBold", offsetX + 10, yPos,
                         Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+
                     cam.End3D2D()
                 end
             end

@@ -32,27 +32,27 @@ function TOOL.BuildCPanel(panel)
 
     local listBox = vgui.Create("DListBox", panel)
     listBox:SetSize(200, 200)
-    listBox:SetPos(10, 450)
+    listBox:SetPos(10, 460)
 
     local deleteButton = vgui.Create("DButton", panel)
     deleteButton:SetText("Delete Mission")
     deleteButton:SetSize(90, 30) -- Réduire la taille du bouton
-    deleteButton:SetPos(10, 380)
+    deleteButton:SetPos(10, 420)
 
     local startButton = vgui.Create("DButton", panel)
     startButton:SetText("Start Mission")
     startButton:SetSize(90, 30)  -- Réduire la taille du bouton
-    startButton:SetPos(110, 380) -- Ajuster la position du bouton
+    startButton:SetPos(110, 420) -- Ajuster la position du bouton
 
     local cancelButton = vgui.Create("DButton", panel)
     cancelButton:SetText("Cancel Mission")
     cancelButton:SetSize(90, 30)  -- Réduire la taille du bouton
-    cancelButton:SetPos(210, 380) -- Ajuster la position du bouton
+    cancelButton:SetPos(210, 420) -- Ajuster la position du bouton
 
     local visualizeButton = vgui.Create("DButton", panel)
     visualizeButton:SetText("Visualize Mission")
     visualizeButton:SetSize(90, 30)  -- Réduire la taille du bouton
-    visualizeButton:SetPos(310, 380) -- Ajuster la position du bouton
+    visualizeButton:SetPos(310, 420) -- Ajuster la position du bouton
 
     -- Function to update the ListBox with the current missions
     local function updateMissions()
@@ -206,10 +206,13 @@ function TOOL.BuildCPanel(panel)
         MaxLength = "50"
     })
 
-    panel:AddControl("Button", {
-        Text = "Modify NPC",
-        Command = "my_tool_modify_mission"
-    })
+    local modifymission = vgui.Create("DButton")
+    modifymission:SetPos(420, 420) -- Set the position of the button
+    modifymission:SetText("Modify NPC")
+    modifymission.DoClick = function()
+        RunConsoleCommand("my_tool_modify_mission")
+    end
+    panel:AddItem(modifymission)
 end
 
 -- Draw the tool screen

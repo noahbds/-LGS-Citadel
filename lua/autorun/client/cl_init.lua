@@ -91,6 +91,10 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
         return GetConVar("my_tool_mission_name"):GetString()
     end
 
+    local function getMissionDescription()
+        return GetConVar("my_tool_mission_description"):GetString()
+    end
+
     local function getMissionFilePath(missionName)
         return "missions/" .. missionName .. "_npcpos.txt"
     end
@@ -228,6 +232,7 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
     -- Modify Mission Interface
     local function main()
         local missionName = getMissionName()
+        local missionDescription = getMissionDescription
         local missionFilePath = getMissionFilePath(missionName)
         print("Checking file: " .. missionFilePath)
         if not doesFileExist(missionFilePath) then
@@ -247,6 +252,10 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
         local listView = vgui.Create("DListView", DPanel)
         listView:SetSize(1050, 500)
         listView:SetPos(10, 10)
+
+        -- Customizing ListView appearance
+        listView:SetHeaderHeight(30)
+        listView:SetMultiSelect(false)
         listView:AddColumn("NPC Class")
         listView:AddColumn("NPC Model")
         listView:AddColumn("NPC Weapon")
@@ -277,17 +286,52 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
                 npcData.health, npcData.hostile,
                 npcData.pos)
             line.npcData = npcData
-            listView.OnRowSelected = function(lst, index, pnl)
-                selectedNpcData = pnl.npcData
-                selectedLine = pnl
-                modifyButton:SetEnabled(true)
-            end
+        end
+
+        listView.OnRowSelected = function(lst, index, pnl)
+            selectedNpcData = pnl.npcData
+            selectedLine = pnl
+            modifyButton:SetEnabled(true)
         end
 
         modifyButton.DoClick = function()
             if selectedNpcData and selectedLine then
                 openModifyDialog(selectedNpcData, selectedLine, missionTable, listView)
             end
+        end
+
+        local missionNameEntry = vgui.Create("DTextEntry", DPanel)
+        missionNameEntry:SetText(missionName)
+        missionNameEntry:SetEditable(false)
+        missionNameEntry:Dock(BOTTOM)
+
+        local missionDescriptionEntry = vgui.Create("DTextEntry", DPanel)
+        missionDescriptionEntry:SetMultiline(true)
+        missionDescriptionEntry:SetTall(100)
+        missionDescriptionEntry:SetText(missionDescription)
+        missionDescriptionEntry:Dock(BOTTOM)
+
+        local saveButton = vgui.Create("DButton", DPanel)
+        saveButton:SetText("Save")
+        saveButton:SetEnabled(false)
+        saveButton:Dock(BOTTOM)
+
+        missionDescriptionEntry.OnTextChanged = function()
+            saveButton:SetEnabled(true)
+        end
+
+        saveButton.DoClick = function()
+            local updatedMissionDescription = missionDescriptionEntry:GetValue()
+
+            missionTable.description = updatedMissionDescription
+
+            local missionData = util.TableToJSON(missionTable)
+            file.Write(getMissionFilePath(missionName), missionData)
+
+            ply:ChatAddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
+                Color(255, 165, 0), "Citadel: Mission description updated: " .. missionName)
+
+            saveButton:SetEnabled(false)
         end
     end
 

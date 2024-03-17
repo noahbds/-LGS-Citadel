@@ -28,54 +28,31 @@ if CLIENT then
 end
 
 function TOOL.BuildCPanel(panel)
-    -- Mission Settings Form
-    local missionSettingsForm = vgui.Create("DForm", panel)
-    missionSettingsForm:SetName("Mission Settings")
-    missionSettingsForm:Dock(TOP)
-    missionSettingsForm:SetTall(150)
-
-    local missionNameEntry = missionSettingsForm:TextEntry("Mission Name", "my_tool_mission_name")
-    missionNameEntry:SetTall(30)
-    missionNameEntry:SetTooltip("Enter the name of the mission (max 50 characters)")
-
-
-    local missionDescEntry = missionSettingsForm:TextEntry("Mission Description", "my_tool_mission_description")
-    missionDescEntry:SetTall(60)
-    missionDescEntry:SetTooltip("Enter the description of the mission (max 100 characters)")
-
-    local createMissionButton = missionSettingsForm:Button("Create Mission", "my_tool_create_mission")
-    createMissionButton:SetTall(30)
-
-    missionNameEntry:OnTextChanged(function()
-        local missionName = missionNameEntry:GetValue()
-        if missionName ~= "" and missionDescEntry:GetValue() ~= "" then
-            -- Vérifiez si le fichier de mission existe déjà
-            if file.Exists("missions/" .. missionName .. "_npcpos.txt", "DATA") then
-                createMissionButton:SetEnabled(false)
-                ply:ChatAddText(Color(255, 0, 0), "[LGS] Citadel : Une mission avec ce nom existe déjà.")
-            else
-                createMissionButton:SetEnabled(true)
-            end
-        else
-            createMissionButton:SetEnabled(false)
-        end
-    end)
-
-    missionDescEntry:OnTextChanged(function()
-        if missionNameEntry:GetValue() ~= "" and missionDescEntry:GetValue() ~= "" then
-            createMissionButton:SetEnabled(true)
-        else
-            createMissionButton:SetEnabled(false)
-        end
-    end)
-
-    createMissionButton.DoClick(function()
-        createMissionButton:SetEnabled(false)
-    end)
+    panel:AddControl("Header", { Text = "Missions", Description = "List of created missions" })
 
     local listBox = vgui.Create("DListBox", panel)
     listBox:SetSize(200, 200)
     listBox:SetPos(10, 460)
+
+    local deleteButton = vgui.Create("DButton", panel)
+    deleteButton:SetText("Delete Mission")
+    deleteButton:SetSize(90, 30) -- Réduire la taille du bouton
+    deleteButton:SetPos(10, 420)
+
+    local startButton = vgui.Create("DButton", panel)
+    startButton:SetText("Start Mission")
+    startButton:SetSize(90, 30)  -- Réduire la taille du bouton
+    startButton:SetPos(110, 420) -- Ajuster la position du bouton
+
+    local cancelButton = vgui.Create("DButton", panel)
+    cancelButton:SetText("Cancel Mission")
+    cancelButton:SetSize(90, 30)  -- Réduire la taille du bouton
+    cancelButton:SetPos(210, 420) -- Ajuster la position du bouton
+
+    local visualizeButton = vgui.Create("DButton", panel)
+    visualizeButton:SetText("Visualize Mission")
+    visualizeButton:SetSize(90, 30)  -- Réduire la taille du bouton
+    visualizeButton:SetPos(310, 420) -- Ajuster la position du bouton
 
     -- Function to update the ListBox with the current missions
     local function updateMissions()
@@ -84,13 +61,15 @@ function TOOL.BuildCPanel(panel)
         local files, _ = file.Find("missions/*", "DATA")
         for _, file in ipairs(files) do
             local missionName = string.gsub(file, "_npcpos.txt", "")
-            local item = listBox:AddItem(missionName)
+            local item = listBox:AddItem(missionName) -- Get the item panel
 
+            -- Set up the OnSelect functionality
             item.DoClick = function()
                 RunConsoleCommand("my_tool_mission_name", missionName)
             end
         end
 
+        -- Disable or enable buttons based on whether a mission name is provided
         local missionName = GetConVar("my_tool_mission_name"):GetString()
         deleteButton:SetEnabled(missionName ~= "")
         startButton:SetEnabled(missionName ~= "")
@@ -101,20 +80,39 @@ function TOOL.BuildCPanel(panel)
     deleteButton.DoClick = function()
         local missionName = GetConVar("my_tool_mission_name"):GetString()
         if missionName == "" then
-            ply:ChatAddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
+            print("No mission name provided.")
+            return
+        end
+
+        local missionFilePath = "missions/" .. missionName .. "_npcpos.txt"
+        if not file.Exists(missionFilePath, "DATA") then
+            print("Mission not found: " .. missionName)
+            return
+        end
+
+        file.Delete(missionFilePath)
+        print("Mission deleted: " .. missionName)
+
+        updateMissions()
+    end
+
+    deleteButton.DoClick = function()
+        local missionName = GetConVar("my_tool_mission_name"):GetString()
+        if missionName == "" then
+            chat.AddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
                 Color(255, 165, 0), "Citadel: No mission name provided.")
             return
         end
 
         local missionFilePath = "missions/" .. missionName .. "_npcpos.txt"
         if not file.Exists(missionFilePath, "DATA") then
-            ply:ChatAddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
+            chat.AddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
                 Color(255, 165, 0), "Citadel: Mission not found: " .. missionName)
             return
         end
 
         file.Delete(missionFilePath)
-        ply:ChatAddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
+        chat.AddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
             Color(255, 165, 0), "Citadel: Mission deleted: " .. missionName)
 
         updateMissions()
@@ -123,52 +121,60 @@ function TOOL.BuildCPanel(panel)
     startButton.DoClick = function()
         local missionName = GetConVar("my_tool_mission_name"):GetString()
         if missionName == "" then
-            ply:ChatAddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
+            chat.AddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
                 Color(255, 165, 0), "Citadel: No mission name provided.")
             return
         end
         local missionFilePath = "missions/" .. missionName .. "_npcpos.txt"
         if not file.Exists(missionFilePath, "DATA") then
-            ply:ChatAddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
+            chat.AddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
                 Color(255, 165, 0), "Citadel: Mission not found: " .. missionName)
             return
         end
 
         RunConsoleCommand("start_mission", missionName)
-        ply:ChatAddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
+        chat.AddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
             Color(255, 165, 0), "Citadel: Mission started: " .. missionName)
     end
 
     cancelButton.DoClick = function()
         local missionName = GetConVar("my_tool_mission_name"):GetString()
         if missionName == "" then
-            ply:ChatAddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
+            chat.AddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
                 Color(255, 165, 0), "Citadel: No mission name provided.")
             return
         end
         local missionFilePath = "missions/" .. missionName .. "_npcpos.txt"
         if not file.Exists(missionFilePath, "DATA") then
-            ply:ChatAddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
+            chat.AddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
                 Color(255, 165, 0), "Citadel: Mission not found: " .. missionName)
             return
         end
 
         RunConsoleCommand("cancel_mission", missionName)
-        ply:ChatAddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
+        chat.AddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
             Color(255, 165, 0), "Citadel: Mission cancelled: " .. missionName)
     end
 
     visualizeButton.DoClick = function()
         local missionName = GetConVar("my_tool_mission_name"):GetString()
         if missionName == "" then
-            ply:ChatAddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
+            chat.AddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
                 Color(255, 165, 0), "Citadel: No mission name provided.")
             return
         end
-
-        RunConsoleCommand("visualize_mission", missionName)
-        ply:ChatAddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
-            Color(255, 165, 0), "Citadel: Mission visualized: " .. missionName)
+        -- Check if a mission is already being visualized
+        if isVisualizing then
+            RunConsoleCommand("StopVisualizeMission", missionName)
+            chat.AddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
+                Color(255, 165, 0), "Citadel: Mission visualization stopped: " .. missionName)
+            isVisualizing = false
+        else
+            RunConsoleCommand("visualize_mission", missionName)
+            chat.AddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
+                Color(255, 165, 0), "Citadel: Mission visualized: " .. missionName)
+            isVisualizing = true
+        end
     end
 
     -- Update the ListBox immediately
@@ -177,70 +183,73 @@ function TOOL.BuildCPanel(panel)
     -- Set up a timer to update the ListBox every second
     timer.Create("UpdateMissionsTimer", 1, 0, updateMissions)
 
-    -- NPC Settings Form
-    local npcSettingsForm = vgui.Create("DForm", panel)
-    npcSettingsForm:SetName("NPC Settings")
-    npcSettingsForm:Dock(TOP)
-    npcSettingsForm:SetTall(200)
+    panel:AddControl("Header", { Text = "Mission Settings", Description = "Set the name and description of the mission" })
 
-    local npcClassEntry = npcSettingsForm:TextEntry("NPC Class", "my_tool_npc_class")
-    npcClassEntry:SetTall(30)
-    npcClassEntry:SetTooltip("Enter the class of the NPC (max 50 characters)")
+    panel:AddControl("TextBox", {
+        Label = "Mission Name",
+        Command = "my_tool_mission_name",
+        MaxLength = "50"
+    })
 
-    local npcModelEntry = npcSettingsForm:TextEntry("NPC Model", "my_tool_npc_model")
-    npcModelEntry:SetTall(30)
-    npcModelEntry:SetTooltip("Enter the model of the NPC (max 50 characters)")
+    panel:AddControl("TextBox", {
+        Label = "Mission Description",
+        Command = "my_tool_mission_description",
+        MaxLength = "100"
+    })
 
-    local npcWeaponEntry = npcSettingsForm:TextEntry("NPC Weapon", "my_tool_npc_weapon")
-    npcWeaponEntry:SetTall(30)
-    npcWeaponEntry:SetTooltip("Enter the weapon of the NPC (max 50 characters)")
+    panel:AddControl("Button", {
+        Text = "Create Mission",
+        Command = "my_tool_create_mission"
+    })
 
-    local npcHealthEntry = npcSettingsForm:TextEntry("NPC Health", "my_tool_npc_health")
-    npcHealthEntry:SetTall(30)
-    npcHealthEntry:SetTooltip("Enter the health of the NPC")
+    -- Add NPC settings controls
+    panel:AddControl("Header", { Text = "NPC Settings", Description = "Set the class and model of the NPC" })
 
-    local npcProficiencySlider = npcSettingsForm:Slider("Weapon Proficiency", "my_tool_npc_weapon_proficiency", 0, 4)
-    npcProficiencySlider:SetTall(50)
-    npcProficiencySlider:SetTooltip("Select the weapon proficiency of the NPC")
+    panel:AddControl("TextBox", {
+        Label = "NPC Class",
+        Command = "my_tool_npc_class",
+        MaxLength = "50"
+    })
 
-    local npcHostileCheckbox = npcSettingsForm:CheckBox("NPC Hostile", "my_tool_npc_hostile")
-    npcHostileCheckbox:SetTooltip("Check if the NPC should be hostile")
+    panel:AddControl("TextBox", {
+        Label = "NPC Model",
+        Command = "my_tool_npc_model",
+        MaxLength = "50"
+    })
 
-    -- Button Panel
-    local buttonPanel = vgui.Create("DPanel", panel)
-    buttonPanel:Dock(TOP)
-    buttonPanel:SetTall(40)
-    buttonPanel.Paint = function() end -- Remove default panel background
+    panel:AddControl("TextBox", {
+        Label = "NPC Weapon",
+        Command = "my_tool_npc_weapon",
+        MaxLength = "50"
+    })
 
-    local modifyMissionButton = vgui.Create("DButton", buttonPanel)
-    modifyMissionButton:SetText("Modify NPC")
-    modifyMissionButton:Dock(RIGHT)
-    modifyMissionButton:SetWide(90)
-    modifyMissionButton:DockMargin(5, 0, 0, 0)
+    panel:AddControl("Slider", {
+        Label = "Weapon Proficiency",
+        Command = "my_tool_npc_weapon_proficiency",
+        Type = "Integer",
+        Min = 0,
+        Max = 4,
+        Help = "0: Poor, 1: Average, 2: Good, 3: Very Good, 4: Perfect"
+    })
 
-    local visualizeButton = vgui.Create("DButton", buttonPanel)
-    visualizeButton:SetText("Visualize Mission")
-    visualizeButton:Dock(RIGHT)
-    visualizeButton:SetWide(120)
-    visualizeButton:DockMargin(5, 0, 0, 0)
+    panel:AddControl("CheckBox", {
+        Label = "NPC Hostile",
+        Command = "my_tool_npc_hostile"
+    })
 
-    local cancelButton = vgui.Create("DButton", buttonPanel)
-    cancelButton:SetText("Cancel Mission")
-    cancelButton:Dock(RIGHT)
-    cancelButton:SetWide(90)
-    cancelButton:DockMargin(5, 0, 0, 0)
+    panel:AddControl("TextBox", {
+        Label = "NPC Health",
+        Command = "my_tool_npc_health",
+        MaxLength = "50"
+    })
 
-    local startButton = vgui.Create("DButton", buttonPanel)
-    startButton:SetText("Start Mission")
-    startButton:Dock(RIGHT)
-    startButton:SetWide(90)
-    startButton:DockMargin(5, 0, 0, 0)
-
-    local deleteButton = vgui.Create("DButton", buttonPanel)
-    deleteButton:SetText("Delete Mission")
-    deleteButton:Dock(RIGHT)
-    deleteButton:SetWide(110)
-    deleteButton:DockMargin(5, 0, 0, 0)
+    local modifymission = vgui.Create("DButton")
+    modifymission:SetPos(420, 420) -- Set the position of the button
+    modifymission:SetText("Modify NPC")
+    modifymission.DoClick = function()
+        RunConsoleCommand("my_tool_modify_mission")
+    end
+    panel:AddItem(modifymission)
 end
 
 function TOOL:LeftClick(trace)
@@ -253,11 +262,11 @@ function TOOL:LeftClick(trace)
     local npcWeapon = GetConVar("my_tool_npc_weapon"):GetString()
     local npcHealth = GetConVar("my_tool_npc_health"):GetString()
     local npcHostile = GetConVar("my_tool_npc_hostile"):GetBool()
-    local npcWeaponProficiency = GetConVar("my_tool_npc_weapon_proficiency"):GetFloat()
+    local npcWeaponProficiency = GetConVar("my_tool_npc_weapon_proficiency"):GetInt()
 
     -- Check if mission is created and class and model are provided
     if missionName == "" or npcClass == "" or npcModel == "" then
-        ply:ChatAddText(Color(255, 0, 0), "[LGS] Citadel : Invalid input. Please fill in all fields.")
+        print("Invalid input. Please fill in all fields.")
         return
     end
 
@@ -303,7 +312,10 @@ function TOOL:LeftClick(trace)
 
         -- Write the JSON data to the mission file
         file.Write(missionFilePath, missionDataJson)
-        ply:ChatAddText(Color(0, 255, 0), "[LGS] Citadel : NPC spawn position added for mission: " .. missionName)
+        print("NPC spawn position added for mission: " .. missionName)
+
+        -- Play a sound effect when an NPC spawn position is added
+        ply:EmitSound("ui/buttonclick.wav")
     end
 end
 

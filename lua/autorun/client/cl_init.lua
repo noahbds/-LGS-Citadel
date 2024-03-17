@@ -91,10 +91,6 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
         return GetConVar("my_tool_mission_name"):GetString()
     end
 
-    local function getMissionDescription()
-        return GetConVar("my_tool_mission_description"):GetString()
-    end
-
     local function getMissionFilePath(missionName)
         return "missions/" .. missionName .. "_npcpos.txt"
     end
@@ -232,7 +228,6 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
     -- Modify Mission Interface
     local function main()
         local missionName = getMissionName()
-        local missionDescription = getMissionDescription
         local missionFilePath = getMissionFilePath(missionName)
         print("Checking file: " .. missionFilePath)
         if not doesFileExist(missionFilePath) then
@@ -252,10 +247,6 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
         local listView = vgui.Create("DListView", DPanel)
         listView:SetSize(1050, 500)
         listView:SetPos(10, 10)
-
-        -- Customizing ListView appearance
-        listView:SetHeaderHeight(30)
-        listView:SetMultiSelect(false)
         listView:AddColumn("NPC Class")
         listView:AddColumn("NPC Model")
         listView:AddColumn("NPC Weapon")
@@ -263,6 +254,18 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
         listView:AddColumn("NPC Health")
         listView:AddColumn("NPC Hostility")
         listView:AddColumn("NPC Position")
+
+        local descriptionTextEntry = vgui.Create("DTextEntry", DPanel)
+        descriptionTextEntry:SetSize(120, 100)
+        descriptionTextEntry:SetPos(1070, 120)
+        descriptionTextEntry:SetMultiline(true)
+        descriptionTextEntry:SetText(missionTable.description)
+        descriptionTextEntry:SetEditable(false) -- Changed to non-editable
+
+        local changeDescriptionButton = vgui.Create("DButton", DPanel)
+        changeDescriptionButton:SetText("Change Description") -- Changed button text
+        changeDescriptionButton:SetSize(120, 30)
+        changeDescriptionButton:SetPos(1070, 90)
 
         local closeButton = vgui.Create("DButton", DPanel)
         closeButton:SetText("Close")
@@ -286,12 +289,11 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
                 npcData.health, npcData.hostile,
                 npcData.pos)
             line.npcData = npcData
-        end
-
-        listView.OnRowSelected = function(lst, index, pnl)
-            selectedNpcData = pnl.npcData
-            selectedLine = pnl
-            modifyButton:SetEnabled(true)
+            listView.OnRowSelected = function(lst, index, pnl)
+                selectedNpcData = pnl.npcData
+                selectedLine = pnl
+                modifyButton:SetEnabled(true)
+            end
         end
 
         modifyButton.DoClick = function()
@@ -300,38 +302,30 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
             end
         end
 
-        local missionNameEntry = vgui.Create("DTextEntry", DPanel)
-        missionNameEntry:SetText(missionName)
-        missionNameEntry:SetEditable(false)
-        missionNameEntry:Dock(BOTTOM)
+        -- New: Functionality for changing description
+        changeDescriptionButton.DoClick = function()
+            local changeDescFrame = vgui.Create("DFrame")
+            changeDescFrame:SetSize(400, 200)
+            changeDescFrame:Center()
+            changeDescFrame:SetTitle("Change Description")
+            changeDescFrame:MakePopup()
 
-        local missionDescriptionEntry = vgui.Create("DTextEntry", DPanel)
-        missionDescriptionEntry:SetMultiline(true)
-        missionDescriptionEntry:SetTall(100)
-        missionDescriptionEntry:SetText(missionDescription)
-        missionDescriptionEntry:Dock(BOTTOM)
+            local descTextEntry = vgui.Create("DTextEntry", changeDescFrame)
+            descTextEntry:Dock(FILL)
+            descTextEntry:SetMultiline(true)
+            descTextEntry:SetText(missionTable.description)
 
-        local saveButton = vgui.Create("DButton", DPanel)
-        saveButton:SetText("Save")
-        saveButton:SetEnabled(false)
-        saveButton:Dock(BOTTOM)
-
-        missionDescriptionEntry.OnTextChanged = function()
-            saveButton:SetEnabled(true)
-        end
-
-        saveButton.DoClick = function()
-            local updatedMissionDescription = missionDescriptionEntry:GetValue()
-
-            missionTable.description = updatedMissionDescription
-
-            local missionData = util.TableToJSON(missionTable)
-            file.Write(getMissionFilePath(missionName), missionData)
-
-            ply:ChatAddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
-                Color(255, 165, 0), "Citadel: Mission description updated: " .. missionName)
-
-            saveButton:SetEnabled(false)
+            local saveDescButton = vgui.Create("DButton", changeDescFrame)
+            saveDescButton:Dock(BOTTOM)
+            saveDescButton:SetText("Save")
+            saveDescButton.DoClick = function()
+                local newDescription = descTextEntry:GetValue()
+                missionTable.description = newDescription
+                local newMissionData = util.TableToJSON(missionTable)
+                file.Write(missionFilePath, newMissionData)
+                changeDescFrame:Close()
+                descriptionTextEntry:SetText(newDescription) -- Update description in the main panel
+            end
         end
     end
 
@@ -340,8 +334,6 @@ end)
 
 -- visualize missionNPCs with phantoms
 local phantoms = {}
-local panelWidth = 350
-local panelHeight = 180
 
 net.Receive("VisualizeMission", function(len)
     local npcData = net.ReadTable()
@@ -455,4 +447,19 @@ net.Receive("VisualizeMission", function(len)
             end
         end
     end)
+end)
+
+net.Receive("StopVisualizeMission", function(len)
+    -- Remove all phantom entities
+    for _, data in ipairs(phantoms) do
+        if IsValid(data.phantom) then
+            data.phantom:Remove()
+        end
+    end
+
+    -- Clear the phantoms table
+    phantoms = {}
+
+    -- Unhook the PostDrawOpaqueRenderables hook
+    hook.Remove("PostDrawOpaqueRenderables", "DrawFrame")
 end)

@@ -1,4 +1,3 @@
----@diagnostic disable: undefined-global
 -- init.lua
 
 local missionNPCs = {}
@@ -27,6 +26,11 @@ concommand.Add("visualize_mission", function(ply, cmd, args)
     end
 end)
 
+concommand.Add("StopVisualizeMission", function(ply, cmd, args)
+    net.Start("StopVisualizeMission")
+    net.Send(ply)
+end)
+
 function createNPC(npcData)
     local npcClass = npcData.class
     local npcModel = npcData.model
@@ -40,7 +44,7 @@ function createNPC(npcData)
 
     if _G["NPC_CLASSES"] and (_G["NPC_CLASSES"][npcClass] or scripted_ents.Get(npcClass)) then
         npc = ents.Create(npcClass)
-    elseif list.Get("NPC")[npcClass] or scripted_ents.IsBasedOn(npcClass, "nb_base") or scripted_ents.IsBasedOn(npcClass, "npc_vj_*") then
+    elseif list.Get("NPC")[npcClass] or scripted_ents.IsBasedOn(npcClass, "nb_base") or scripted_ents.IsBasedOn(npcClass, "npc_*") then
         npc = ents.Create(npcClass)
         npc:SetCustomCollisionCheck(true)
         npc:SetModel(npcModel)
@@ -83,28 +87,27 @@ function StartMission(player, command, arguments)
     local missionData = file.Read("missions/" .. missionName .. "_npcpos.txt", "DATA")
 
     if not missionData then
-        ply:ChatAddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
-            Color(255, 165, 0), "Citadel: Mission data not found for: " .. missionName)
+        print("Mission data not found for:", missionName)
         return
     end
 
+    -- Get the current map name
     local currentMap = game.GetMap()
 
+    -- Convert the mission data from JSON to a Lua table
     local missionTable = util.JSONToTable(missionData)
 
+    -- Check if the map in the mission data matches the current map
     if missionTable.map ~= currentMap then
-        ply:ChatAddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
-            Color(255, 165, 0), "Citadel: The mission cannot be started because the map does not match.")
+        print("The mission cannot be started because the map does not match.")
         return
     end
 
     local missionName = missionTable.name
     local missionDescription = missionTable.description
 
-    ply:ChatAddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ", Color(255, 165, 0),
-        "Citadel: Mission Name: " .. missionName)
-    ply:ChatAddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ", Color(255, 165, 0),
-        "Citadel: Mission Description: " .. missionDescription)
+    print("Mission Name: " .. missionName)
+    print("Mission Description: " .. missionDescription)
 
     missionNPCs[missionName] = missionNPCs[missionName] or {}
 
@@ -137,37 +140,23 @@ concommand.Add("list_missions", function(ply, cmd, args)
     end
 end)
 
--- Cancel a mission (New Method - Not Tested Yet)
+-- Add the cancel_mission command
 concommand.Add("cancel_mission", function(ply, cmd, args)
-    local missionName = args[1]
-    if not missionName then
-        ply:ChatAddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
-            Color(255, 165, 0), "Citadel: No mission name provided.")
+    local missionName = args[1] -- Get the mission name from the arguments
+    -- Check if the mission exists
+    if not missionNPCs[missionName] then
+        print("The mission does not exist or is not active.")
         return
     end
-
-    local missionNpcs = missionNPCs[missionName]
-    if not missionNpcs then
-        ply:ChatAddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
-            Color(255, 165, 0), "Citadel: No active mission found with name: " .. missionName)
-        return
-    end
-
-    for _, npc in ipairs(missionNpcs) do
+    -- Remove all NPCs of the mission
+    for _, npc in ipairs(missionNPCs[missionName]) do
         if IsValid(npc) then
-            if npc:IsNextBot() then
-                npc:BecomeRagdoll()
-            elseif string.StartWith(npc:GetClass(), "npc_vj_") then
-                npc:Remove()
-            else
-                npc:Remove()
-            end
+            npc:Remove()
         end
     end
-
+    -- Clear the missionNPCs table for the mission
     missionNPCs[missionName] = nil
-    ply:ChatAddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ", Color(255, 165, 0),
-        "Citadel: Mission cancelled: " .. missionName)
+    print("Mission " .. missionName .. " has been cancelled.")
 end)
 
 concommand.Add("my_tool_create_mission", function(ply, cmd, args)
@@ -178,8 +167,7 @@ concommand.Add("my_tool_create_mission", function(ply, cmd, args)
     local missionName = GetConVar("my_tool_mission_name"):GetString()
 
     if missionName == "" then
-        ply:ChatAddText(Color(255, 255, 255), "[", Color(255, 0, 0), "LGS", Color(255, 255, 255), "] ",
-            Color(255, 165, 0), "Citadel: The mission name is not defined.")
+        print("The mission name is not defined.")
         return
     end
 

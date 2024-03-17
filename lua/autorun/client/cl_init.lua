@@ -146,6 +146,14 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
         weaponEntry:SetText(npcData.weapon)
         weaponEntry:Dock(TOP)
 
+        local weaponproficiencyLabel = vgui.Create("DLabel", editDialog)
+        weaponproficiencyLabel:SetText("NPC Weapon Proficiency:")
+        weaponproficiencyLabel:Dock(TOP)
+
+        local weaponproficiencyEntry = vgui.Create("DTextEntry", editDialog)
+        weaponproficiencyEntry:SetText(npcData.weaponProficiency)
+        weaponproficiencyEntry:Dock(TOP)
+
         local hostileLabel = vgui.Create("DLabel", editDialog)
         hostileLabel:SetText("NPC Hostile:")
         hostileLabel:Dock(TOP)
@@ -181,7 +189,8 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
 
             listView:Clear()
             for _, npcData in ipairs(missionTable.npcs) do
-                local newLine = listView:AddLine(npcData.class, npcData.model, npcData.weapon, npcData.health,
+                local newLine = listView:AddLine(npcData.class, npcData.model, npcData.weapon, npcData.weaponProficiency,
+                    npcData.health,
                     npcData.hostile, npcData.pos)
                 newLine.npcData = npcData
             end
@@ -196,14 +205,16 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
             npcData.class = classEntry:GetValue()
             npcData.model = modelEntry:GetValue()
             npcData.weapon = weaponEntry:GetValue()
+            npcData.weaponProficiency = weaponproficiencyEntry:GetValue()
             npcData.hostile = hostileEntry:GetChecked()
             npcData.health = healthEntry:GetValue()
 
             line:SetColumnText(1, npcData.class)
             line:SetColumnText(2, npcData.model)
             line:SetColumnText(3, npcData.weapon)
-            line:SetColumnText(4, npcData.health)
-            line:SetColumnText(5, npcData.hostile)
+            line:SetColumnText(4, npcData.weaponProficiency)
+            line:SetColumnText(5, npcData.health)
+            line:SetColumnText(6, npcData.hostile)
 
             local missionData = util.TableToJSON(missionTable)
             file.Write(getMissionFilePath(getMissionName()), missionData)
@@ -239,6 +250,7 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
         listView:AddColumn("NPC Class")
         listView:AddColumn("NPC Model")
         listView:AddColumn("NPC Weapon")
+        listView:AddColumn("NPC Weapon Proficiency")
         listView:AddColumn("NPC Health")
         listView:AddColumn("NPC Hostility")
         listView:AddColumn("NPC Position")
@@ -261,7 +273,8 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
         local selectedLine = nil
 
         for _, npcData in ipairs(missionTable.npcs) do
-            local line = listView:AddLine(npcData.class, npcData.model, npcData.weapon, npcData.health, npcData.hostile,
+            local line = listView:AddLine(npcData.class, npcData.model, npcData.weapon, npcData.weaponProficiency,
+                npcData.health, npcData.hostile,
                 npcData.pos)
             line.npcData = npcData
             listView.OnRowSelected = function(lst, index, pnl)
@@ -281,7 +294,7 @@ concommand.Add("my_tool_modify_mission", function(ply, cmd, args)
     main()
 end)
 
--- visualize missionNPCs
+-- visualize missionNPCs with phantoms
 local phantoms = {}
 local panelWidth = 350
 local panelHeight = 180
@@ -302,6 +315,7 @@ net.Receive("VisualizeMission", function(len)
 
     table.insert(phantoms, { phantom = phantom, npcData = npcData })
 
+    -- 3d2d panel for npc data that spawn at phantom position
     hook.Add("PostDrawOpaqueRenderables", "DrawFrame", function()
         for _, data in ipairs(phantoms) do
             local phantom = data.phantom
@@ -316,13 +330,11 @@ net.Receive("VisualizeMission", function(len)
                     local pos = phantomPos + Vector(0, 0, 50)
                     local ang = Angle(0, LocalPlayer():EyeAngles().yaw - 90, 90)
 
-                    -- Calculate text size for dynamic panel dimensions
                     surface.SetFont("DermaDefaultBold")
                     local panelWidth = 0
                     local panelHeight = 10
                     local textSpacing = 2
 
-                    -- Initialize offsetY with a default value
                     local offsetY = 0
 
                     local function drawTextLine(label, value)
@@ -336,9 +348,8 @@ net.Receive("VisualizeMission", function(len)
                         return false, nil, 0
                     end
 
-                    -- Calculate panel dimensions and lines to draw
                     local linesToDraw = {}
-                    local yPos = 5 -- Reset yPos for each frame
+                    local yPos = 5
 
                     local shouldDraw, text, textHeight = drawTextLine("NPC Class", npcData.class)
                     if shouldDraw then
@@ -382,15 +393,13 @@ net.Receive("VisualizeMission", function(len)
                         yPos = yPos + textHeight + textSpacing
                     end
 
-                    -- Calculate the offset to center the 3D2D panel on the phantom
                     local offsetX = -panelWidth / 2
-                    offsetY = -panelHeight / 2 -- Update offsetY here
+                    offsetY = -panelHeight / 2
 
                     cam.Start3D2D(pos, ang, 0.1)
                     surface.SetDrawColor(50, 50, 50, 200)
                     surface.DrawRect(offsetX, offsetY, panelWidth, panelHeight)
 
-                    -- Display NPC data
                     for _, lineData in ipairs(linesToDraw) do
                         local line, yPos = unpack(lineData)
                         draw.SimpleText(line, "DermaDefaultBold", offsetX + 10, offsetY + yPos, Color(255, 255, 255),

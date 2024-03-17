@@ -39,7 +39,7 @@ function createNPC(npcData)
 
     if _G["NPC_CLASSES"] and (_G["NPC_CLASSES"][npcClass] or scripted_ents.Get(npcClass)) then
         npc = ents.Create(npcClass)
-    elseif list.Get("NPC")[npcClass] or scripted_ents.IsBasedOn(npcClass, "nb_base") or scripted_ents.IsBasedOn(npcClass, "npc_vj_*") then
+    elseif list.Get("NPC")[npcClass] or scripted_ents.IsBasedOn(npcClass, "nb_base") or scripted_ents.IsBasedOn(npcClass, "npc_*") then
         npc = ents.Create(npcClass)
         npc:SetCustomCollisionCheck(true)
         npc:SetModel(npcModel)
@@ -129,25 +129,34 @@ end
 
 concommand.Add("start_mission", StartMission)
 
+concommand.Add("list_missions", function(ply, cmd, args)
+    for missionName, _ in pairs(missionNPCs) do
+        print("Active mission:", missionName)
+    end
+end)
+
+-- Cancel a mission (For now doesn't work on NextBot NPCs and VJ Base NPCs)
 concommand.Add("cancel_mission", function(ply, cmd, args)
     local missionName = args[1]
-
-    if not missionNPCs[missionName] then
-        print("The mission does not exist or is not active.")
+    if not missionName then
+        print("No mission name provided.")
         return
     end
 
-    for _, npc in ipairs(missionNPCs[missionName]) do
+    local missionNpcs = missionNPCs[missionName]
+    if not missionNpcs then
+        print("No active mission found with name:", missionName)
+        return
+    end
+
+    for _, npc in ipairs(missionNpcs) do
         if IsValid(npc) then
-            if npc:IsNextBot() then
-                npc:Remove()
-            end
+            npc:Remove()
         end
     end
 
     missionNPCs[missionName] = nil
-
-    print("Mission " .. missionName .. " has been cancelled.")
+    print("Mission cancelled:", missionName)
 end)
 
 concommand.Add("my_tool_create_mission", function(ply, cmd, args)
